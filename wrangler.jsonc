@@ -6,7 +6,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "aichat",
 	"main": "src/server.ts",
-	"compatibility_date": "2026-03-02",
+	"compatibility_date": "2026-05-21",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
