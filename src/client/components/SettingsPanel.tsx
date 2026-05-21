@@ -116,7 +116,7 @@ function SystemPromptField({
       <textarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
-        placeholder="No system prompt — model uses its own default."
+        placeholder="Empty system prompt."
         rows={5}
         className="w-full px-3 py-2 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent resize-y"
       />
