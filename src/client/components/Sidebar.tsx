@@ -102,18 +102,28 @@ function SidebarRow({
   const title = entry.title || "Image";
   return (
     <li
-      className={`group flex items-center gap-1 px-1 rounded-md transition-colors ${
-        active ? "bg-kumo-control" : "hover:bg-kumo-control/50"
+      aria-current={active ? "page" : undefined}
+      className={`group flex items-center gap-1 pr-1 rounded-md transition-colors border-l-2 ${
+        active
+          ? "border-kumo-brand bg-kumo-brand/10"
+          : "border-transparent hover:bg-kumo-control/50"
       }`}
     >
       <button
         type="button"
         onClick={onSelect}
-        className="flex-1 min-w-0 flex items-center gap-2 px-1 py-1.5 text-left"
+        className="flex-1 min-w-0 flex items-center gap-2 pl-2 pr-1 py-1.5 text-left"
       >
-        <ChatCircleDotsIcon size={14} className="shrink-0 text-kumo-inactive" />
+        <ChatCircleDotsIcon
+          size={14}
+          className={`shrink-0 ${active ? "text-kumo-brand" : "text-kumo-inactive"}`}
+        />
         <div className="flex-1 min-w-0">
-          <div className="truncate text-sm text-kumo-default">{title}</div>
+          <div
+            className={`truncate text-sm ${active ? "font-medium text-kumo-default" : "text-kumo-default"}`}
+          >
+            {title}
+          </div>
           <div className="text-[10px] text-kumo-subtle">
             {formatRelative(entry.updatedAt)}
           </div>
