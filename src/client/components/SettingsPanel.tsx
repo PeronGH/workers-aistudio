@@ -4,13 +4,11 @@ import { Collapsible } from "@cloudflare/kumo/components/collapsible";
 import { CaretDownIcon, CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import {
   PENALTY_RANGE,
-  RESPONSE_FORMATS,
   SEARCH_CONTEXT_SIZES,
   STOP_MAX,
   TEMPERATURE_RANGE,
   THINKING_LEVELS,
   TOP_P_RANGE,
-  type ResponseFormat,
   type RunSettings,
   type SearchContextSize,
   type ThinkingLevel
@@ -98,10 +96,6 @@ export function SettingsPanel({
             value={settings.seed}
             seed={0}
             onChange={(v) => onUpdate({ seed: v })}
-          />
-          <ResponseFormatField
-            value={settings.response_format}
-            onChange={(v) => onUpdate({ response_format: v })}
           />
         </AdvancedSection>
       </div>
@@ -315,31 +309,6 @@ function WebSearchField({
         value={value?.search_context_size ?? "medium"}
         disabled={!enabled}
         onChange={(v) => onChange({ search_context_size: v })}
-      />
-    </ToggleRow>
-  );
-}
-
-function ResponseFormatField({
-  value,
-  onChange
-}: {
-  value: ResponseFormat | undefined;
-  onChange: (v: ResponseFormat | undefined) => void;
-}) {
-  const enabled = value !== undefined;
-  return (
-    <ToggleRow
-      label="Response format"
-      enabled={enabled}
-      onToggle={(on) => onChange(on ? "text" : undefined)}
-      detail={enabled ? value : "default"}
-    >
-      <Segmented
-        options={RESPONSE_FORMATS}
-        value={value ?? "text"}
-        disabled={!enabled}
-        onChange={onChange}
       />
     </ToggleRow>
   );

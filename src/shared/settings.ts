@@ -6,7 +6,6 @@ export const PENALTY_RANGE = { min: -2, max: 2, step: 0.1 } as const;
 export const STOP_MAX = 4;
 export const THINKING_LEVELS = ["none", "low", "medium", "high"] as const;
 export const SEARCH_CONTEXT_SIZES = ["low", "medium", "high"] as const;
-export const RESPONSE_FORMATS = ["text", "json_object"] as const;
 
 export const RunSettingsSchema = z
   .object({
@@ -24,12 +23,10 @@ export const RunSettingsSchema = z
     }),
     frequency_penalty: z.number().min(PENALTY_RANGE.min).max(PENALTY_RANGE.max),
     presence_penalty: z.number().min(PENALTY_RANGE.min).max(PENALTY_RANGE.max),
-    seed: z.number().int(),
-    response_format: z.enum(RESPONSE_FORMATS)
+    seed: z.number().int()
   })
   .partial();
 
 export type RunSettings = z.infer<typeof RunSettingsSchema>;
 export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
 export type SearchContextSize = (typeof SEARCH_CONTEXT_SIZES)[number];
-export type ResponseFormat = (typeof RESPONSE_FORMATS)[number];

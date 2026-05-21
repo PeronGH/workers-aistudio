@@ -76,9 +76,6 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
     out.presence_penalty = settings.presence_penalty;
   }
   if (settings.seed !== undefined) out.seed = settings.seed;
-  if (settings.response_format !== undefined) {
-    out.response_format = { type: settings.response_format };
-  }
   if (settings.web_search !== undefined) {
     out.web_search_options = settings.web_search;
   }
