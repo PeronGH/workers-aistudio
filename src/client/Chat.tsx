@@ -6,11 +6,14 @@ import { useRunSettings } from "./hooks/useRunSettings";
 import { useAttachments } from "./hooks/useAttachments";
 import { uploadImage } from "./utils/attachments";
 import { api } from "./utils/api";
+import { CURRENT_VERSION } from "../shared/conversations";
+import type { UiMessage } from "../shared/messages";
 import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar } from "./components/Sidebar";
+import { CopyIcon } from "@phosphor-icons/react";
 
 const TITLE_MAX = 40;
 
@@ -59,6 +62,22 @@ export function Chat() {
     navigate,
     claimLocal
   ]);
+
+  const isShared =
+    activeUuid !== null &&
+    !conversations.index.some((e) => e.uuid === activeUuid);
+
+  const clone = useCallback(async () => {
+    if (!isShared || messages.length === 0) return;
+    const newUuid = crypto.randomUUID();
+    conversations.add(newUuid, deriveTitle(messages));
+    claimLocal(newUuid);
+    await api.api.conversations[":uuid"].$put({
+      param: { uuid: newUuid },
+      json: { version: CURRENT_VERSION, messages, settings }
+    });
+    navigate(newUuid);
+  }, [isShared, messages, conversations, claimLocal, settings, navigate]);
 
   const handleDelete = useCallback(
     async (uuid: string) => {
@@ -115,17 +134,34 @@ export function Chat() {
               </div>
             )}
             <div className="border-t border-kumo-line bg-kumo-base">
-              <Composer
-                input={input}
-                onInputChange={setInput}
-                attachments={att.attachments}
-                onAddFiles={att.add}
-                onRemoveAttachment={att.remove}
-                onPaste={att.onPaste}
-                onSubmit={submit}
-                onStop={stop}
-                isStreaming={isStreaming}
-              />
+              {isShared ? (
+                <div className="max-w-4xl mx-auto px-5 py-4 flex items-center justify-center gap-3">
+                  <span className="text-sm text-kumo-subtle">
+                    Read-only shared conversation.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clone}
+                    disabled={messages.length === 0}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CopyIcon size={14} />
+                    Clone to continue
+                  </button>
+                </div>
+              ) : (
+                <Composer
+                  input={input}
+                  onInputChange={setInput}
+                  attachments={att.attachments}
+                  onAddFiles={att.add}
+                  onRemoveAttachment={att.remove}
+                  onPaste={att.onPaste}
+                  onSubmit={submit}
+                  onStop={stop}
+                  isStreaming={isStreaming}
+                />
+              )}
             </div>
           </div>
           <SettingsPanel
@@ -137,4 +173,12 @@ export function Chat() {
       </div>
     </div>
   );
+}
+
+function deriveTitle(messages: UiMessage[]): string {
+  const firstUser = messages.find((m) => m.role === "user");
+  if (firstUser && firstUser.role === "user") {
+    return firstUser.text.trim().slice(0, TITLE_MAX);
+  }
+  return "";
 }
