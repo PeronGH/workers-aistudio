@@ -4,13 +4,11 @@ import { Collapsible } from "@cloudflare/kumo/components/collapsible";
 import { CaretDownIcon, CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import {
   PENALTY_RANGE,
-  SEARCH_CONTEXT_SIZES,
   STOP_MAX,
   TEMPERATURE_RANGE,
   THINKING_LEVELS,
   TOP_P_RANGE,
   type RunSettings,
-  type SearchContextSize,
   type ThinkingLevel
 } from "../../shared/settings";
 
@@ -70,10 +68,6 @@ export function SettingsPanel({
         <ThinkingField
           value={settings.thinking}
           onChange={(v) => onUpdate({ thinking: v })}
-        />
-        <WebSearchField
-          value={settings.web_search}
-          onChange={(v) => onUpdate({ web_search: v })}
         />
 
         <AdvancedSection>
@@ -282,33 +276,6 @@ function ThinkingField({
         value={value ?? "medium"}
         disabled={!enabled}
         onChange={onChange}
-      />
-    </ToggleRow>
-  );
-}
-
-function WebSearchField({
-  value,
-  onChange
-}: {
-  value: { search_context_size: SearchContextSize } | undefined;
-  onChange: (v: { search_context_size: SearchContextSize } | undefined) => void;
-}) {
-  const enabled = value !== undefined;
-  return (
-    <ToggleRow
-      label="Web search"
-      enabled={enabled}
-      onToggle={(on) =>
-        onChange(on ? { search_context_size: "medium" } : undefined)
-      }
-      detail={enabled ? value.search_context_size : "off"}
-    >
-      <Segmented
-        options={SEARCH_CONTEXT_SIZES}
-        value={value?.search_context_size ?? "medium"}
-        disabled={!enabled}
-        onChange={(v) => onChange({ search_context_size: v })}
       />
     </ToggleRow>
   );
