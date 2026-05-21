@@ -1,58 +1,35 @@
-import { z } from "zod";
-import type { Context } from "hono";
+import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 import { ChatMessageSchema, type ChatMessage } from "../shared/messages";
 import { RunSettingsSchema, type RunSettings } from "../shared/settings";
 
-const ChatRequestSchema = z.object({
+const MODEL = "@cf/moonshotai/kimi-k2.6";
+
+export const ChatRequestSchema = z.object({
   messages: z.array(ChatMessageSchema).min(1),
   settings: RunSettingsSchema.optional()
 });
 
-export const chatValidator = zValidator("json", ChatRequestSchema);
-
-export async function chatHandler(
-  c: Context<{ Bindings: Env }>,
-  model: string
-): Promise<Response> {
-  const { messages, settings = {} } = (
-    c.req as unknown as {
-      valid(target: "json"): z.infer<typeof ChatRequestSchema>;
-    }
-  ).valid("json");
-
-  const payload = buildPayload(messages, settings);
-
-  const upstream = (await c.env.AI.run(
-    model as Parameters<Ai["run"]>[0],
-    payload as never,
-    { returnRawResponse: true }
-  )) as unknown;
-
-  if (upstream instanceof Response) {
-    return new Response(upstream.body, {
-      status: upstream.status,
+export const chatRoutes = new Hono<{ Bindings: Env }>().post(
+  "/",
+  zValidator("json", ChatRequestSchema),
+  async (c) => {
+    const { messages, settings = {} } = c.req.valid("json");
+    const upstream = await c.env.AI.run(
+      MODEL,
+      buildPayload(messages, settings),
+      { returnRawResponse: true }
+    );
+    return new Response(upstream.body as ReadableStream, {
+      status: upstream.status as number,
       headers: {
         "content-type": "text/event-stream",
         "cache-control": "no-cache"
       }
     });
   }
-
-  if (upstream instanceof ReadableStream) {
-    return new Response(upstream, {
-      headers: {
-        "content-type": "text/event-stream",
-        "cache-control": "no-cache"
-      }
-    });
-  }
-
-  return Response.json(
-    { error: "Unexpected upstream response" },
-    { status: 502 }
-  );
-}
+);
 
 function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   const out: Record<string, unknown> = {

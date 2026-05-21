@@ -1,37 +1,14 @@
 import { Hono } from "hono";
-import { chatHandler, chatValidator } from "./chat";
-import {
-  conversationBodyValidator,
-  deleteConversationHandler,
-  getConversationHandler,
-  putConversationHandler,
-  uuidParamValidator
-} from "./conversations";
-import { serveUploadHandler, uploadHandler } from "./upload";
+import { chatRoutes } from "./chat";
+import { conversationRoutes } from "./conversations";
+import { uploadRoutes } from "./upload";
 
-const MODEL = "@cf/moonshotai/kimi-k2.6";
+const routes = new Hono<{ Bindings: Env }>()
+  .route("/api/chat", chatRoutes)
+  .route("/api/upload", uploadRoutes)
+  .route("/api/conversations", conversationRoutes);
 
-const app = new Hono<{ Bindings: Env }>();
+routes.notFound((c) => c.text("Not found", 404));
 
-app.post("/api/chat", chatValidator, (c) => chatHandler(c, MODEL));
-
-app.post("/api/upload", uploadHandler);
-app.get("/api/upload/:key", serveUploadHandler);
-
-app
-  .get("/api/conversations/:uuid", uuidParamValidator, getConversationHandler)
-  .put(
-    "/api/conversations/:uuid",
-    uuidParamValidator,
-    conversationBodyValidator,
-    putConversationHandler
-  )
-  .delete(
-    "/api/conversations/:uuid",
-    uuidParamValidator,
-    deleteConversationHandler
-  );
-
-app.notFound((c) => c.text("Not found", 404));
-
-export default app;
+export type AppType = typeof routes;
+export default routes;

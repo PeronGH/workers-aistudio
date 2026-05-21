@@ -4,6 +4,7 @@ import { useConversations } from "./hooks/useConversations";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useAttachments } from "./hooks/useAttachments";
 import { uploadImage } from "./utils/attachments";
+import { api } from "./utils/api";
 import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
@@ -47,7 +48,7 @@ export function Chat() {
   const handleDelete = useCallback(
     async (uuid: string) => {
       try {
-        await fetch(`/api/conversations/${uuid}`, { method: "DELETE" });
+        await api.api.conversations[":uuid"].$delete({ param: { uuid } });
       } catch {
         /* ignore */
       }

@@ -12,6 +12,7 @@ import {
 } from "../../shared/conversations";
 import type { RunSettings } from "../../shared/settings";
 import { parseSseStream } from "../utils/sse";
+import { api } from "../utils/api";
 
 interface ChatDelta {
   choices?: {
@@ -52,7 +53,9 @@ export function useChat(activeUuid: string | null) {
     setIsLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/conversations/${activeUuid}`);
+        const res = await api.api.conversations[":uuid"].$get({
+          param: { uuid: activeUuid }
+        });
         if (cancelled) return;
         if (res.status === 404) {
           setMessages([]);
@@ -115,12 +118,10 @@ export function useChat(activeUuid: string | null) {
 
       try {
         const apiMessages = toApiMessages(afterUser);
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ messages: apiMessages, settings }),
-          signal: controller.signal
-        });
+        const res = await api.api.chat.$post(
+          { json: { messages: apiMessages, settings } },
+          { init: { signal: controller.signal } }
+        );
         if (!res.ok || !res.body) {
           const body = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
@@ -193,10 +194,9 @@ async function putConversation(
     settings
   };
   try {
-    await fetch(`/api/conversations/${uuid}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(state)
+    await api.api.conversations[":uuid"].$put({
+      param: { uuid },
+      json: state
     });
   } catch {
     // Network error — silently drop. Next successful PUT will overwrite.

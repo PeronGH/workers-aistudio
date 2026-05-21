@@ -1,82 +1,49 @@
-import { z } from "zod";
-import type { Context } from "hono";
+import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import {
-  ConversationStateSchema,
-  CURRENT_VERSION,
-  type ConversationState
-} from "../shared/conversations";
+import { z } from "zod";
+import { ConversationStateSchema } from "../shared/conversations";
 
 const PREFIX = "conversations/";
 const UuidParamSchema = z.object({ uuid: z.uuid() });
 
-export const uuidParamValidator = zValidator("param", UuidParamSchema);
-export const conversationBodyValidator = zValidator(
-  "json",
-  ConversationStateSchema
-);
+const keyFor = (uuid: string) => `${PREFIX}${uuid}.json`;
 
-function paramUuid(c: Context): string {
-  return (
-    c.req as unknown as {
-      valid(target: "param"): z.infer<typeof UuidParamSchema>;
+export const conversationRoutes = new Hono<{ Bindings: Env }>()
+  .get("/:uuid", zValidator("param", UuidParamSchema), async (c) => {
+    const { uuid } = c.req.valid("param");
+    const object = await c.env.UPLOADS.get(keyFor(uuid));
+    if (!object) return c.text("Not found", 404);
+    const raw = await object.text();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return c.json({ error: "Stored conversation is not valid JSON" }, 500);
     }
-  ).valid("param").uuid;
-}
-
-function bodyState(c: Context): ConversationState {
-  return (
-    c.req as unknown as {
-      valid(target: "json"): ConversationState;
+    const result = ConversationStateSchema.safeParse(parsed);
+    if (!result.success) {
+      return c.json(
+        { error: "Stored conversation failed schema validation" },
+        409
+      );
     }
-  ).valid("json");
-}
-
-function keyFor(uuid: string): string {
-  return `${PREFIX}${uuid}.json`;
-}
-
-export async function getConversationHandler(
-  c: Context<{ Bindings: Env }>
-): Promise<Response> {
-  const uuid = paramUuid(c);
-  const object = await c.env.UPLOADS.get(keyFor(uuid));
-  if (!object) return c.text("Not found", 404);
-  const raw = await object.text();
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return c.json({ error: "Stored conversation is not valid JSON" }, 500);
-  }
-  const result = ConversationStateSchema.safeParse(parsed);
-  if (!result.success) {
-    return c.json(
-      {
-        error: "Stored conversation failed schema validation",
-        expectedVersion: CURRENT_VERSION
-      },
-      409
-    );
-  }
-  return c.json(result.data);
-}
-
-export async function putConversationHandler(
-  c: Context<{ Bindings: Env }>
-): Promise<Response> {
-  const uuid = paramUuid(c);
-  const state = bodyState(c);
-  await c.env.UPLOADS.put(keyFor(uuid), JSON.stringify(state), {
-    httpMetadata: { contentType: "application/json" }
+    return c.json(result.data);
+  })
+  .put(
+    "/:uuid",
+    zValidator("param", UuidParamSchema),
+    zValidator("json", ConversationStateSchema),
+    async (c) => {
+      const { uuid } = c.req.valid("param");
+      const state = c.req.valid("json");
+      await c.env.UPLOADS.put(keyFor(uuid), JSON.stringify(state), {
+        httpMetadata: { contentType: "application/json" }
+      });
+      return c.body(null, 204);
+    }
+  )
+  .delete("/:uuid", zValidator("param", UuidParamSchema), async (c) => {
+    const { uuid } = c.req.valid("param");
+    await c.env.UPLOADS.delete(keyFor(uuid));
+    return c.body(null, 204);
   });
-  return new Response(null, { status: 204 });
-}
-
-export async function deleteConversationHandler(
-  c: Context<{ Bindings: Env }>
-): Promise<Response> {
-  const uuid = paramUuid(c);
-  await c.env.UPLOADS.delete(keyFor(uuid));
-  return new Response(null, { status: 204 });
-}
