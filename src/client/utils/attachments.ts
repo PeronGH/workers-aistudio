@@ -14,11 +14,16 @@ export function createAttachment(file: File): Attachment {
   };
 }
 
-export function fileToDataUri(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+export async function uploadImage(file: File): Promise<string> {
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "content-type": file.type },
+    body: file
   });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Upload failed (${res.status}): ${body || res.statusText}`);
+  }
+  const { url } = (await res.json()) as { url: string };
+  return new URL(url, window.location.origin).toString();
 }

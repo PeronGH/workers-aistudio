@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useChat } from "./hooks/useChat";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useAttachments } from "./hooks/useAttachments";
-import { fileToDataUri } from "./utils/attachments";
+import { uploadImage } from "./utils/attachments";
 import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
@@ -21,7 +21,7 @@ export function Chat() {
 
     const images = await Promise.all(
       att.attachments.map(async (a) => ({
-        url: await fileToDataUri(a.file),
+        url: await uploadImage(a.file),
         mediaType: a.mediaType
       }))
     );
