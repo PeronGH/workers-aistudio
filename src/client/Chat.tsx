@@ -6,14 +6,13 @@ import { useRunSettings } from "./hooks/useRunSettings";
 import { useAttachments } from "./hooks/useAttachments";
 import { uploadImage } from "./utils/attachments";
 import { api } from "./utils/api";
-import { CURRENT_VERSION } from "../shared/conversations";
 import type { UiMessage } from "../shared/messages";
 import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar } from "./components/Sidebar";
-import { CopyIcon } from "@phosphor-icons/react";
+import { SharedFooter } from "./components/SharedFooter";
 
 const TITLE_MAX = 40;
 
@@ -23,8 +22,20 @@ export function Chat() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeUuid, navigate] = useActiveUuid();
   const conversations = useConversations();
-  const { messages, send, stop, claimLocal, isStreaming, isLoading, error } =
-    useChat(activeUuid);
+  const {
+    state,
+    path,
+    messages,
+    send,
+    retry,
+    editUser,
+    selectSibling,
+    stop,
+    claimLocal,
+    isStreaming,
+    isLoading,
+    error
+  } = useChat(activeUuid);
   const { settings, update, reset } = useRunSettings();
   const att = useAttachments();
 
@@ -74,10 +85,18 @@ export function Chat() {
     claimLocal(newUuid);
     await api.api.conversations[":uuid"].$put({
       param: { uuid: newUuid },
-      json: { version: CURRENT_VERSION, messages, settings }
+      json: { ...state, settings }
     });
     navigate(newUuid);
-  }, [isShared, messages, conversations, claimLocal, settings, navigate]);
+  }, [
+    isShared,
+    messages,
+    state,
+    conversations,
+    claimLocal,
+    settings,
+    navigate
+  ]);
 
   const handleDelete = useCallback(
     async (uuid: string) => {
@@ -118,10 +137,26 @@ export function Chat() {
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0">
             <MessageList
-              messages={messages}
+              path={path}
               isStreaming={isStreaming}
               showDebug={showDebug}
               isDragging={att.isDragging}
+              readOnly={isShared}
+              onRetry={(id) => {
+                if (activeUuid) void retry(activeUuid, id, settings);
+              }}
+              onEdit={(id, text) => {
+                if (activeUuid)
+                  void editUser({
+                    uuid: activeUuid,
+                    nodeId: id,
+                    text,
+                    settings
+                  });
+              }}
+              onSelectSibling={(parentId, childId) => {
+                if (activeUuid) selectSibling(activeUuid, parentId, childId);
+              }}
             />
             {isLoading && (
               <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-subtle">
@@ -135,20 +170,7 @@ export function Chat() {
             )}
             <div className="border-t border-kumo-line bg-kumo-base">
               {isShared ? (
-                <div className="max-w-4xl mx-auto px-5 py-4 flex items-center justify-center gap-3">
-                  <span className="text-sm text-kumo-subtle">
-                    Read-only shared conversation.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={clone}
-                    disabled={messages.length === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CopyIcon size={14} />
-                    Clone to continue
-                  </button>
-                </div>
+                <SharedFooter canClone={messages.length > 0} onClone={clone} />
               ) : (
                 <Composer
                   input={input}

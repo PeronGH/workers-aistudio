@@ -2,13 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   newId,
   toApiMessages,
+  type MessageNode,
   type UiAssistantMessage,
   type UiMessage,
   type UiUserMessage
 } from "../../shared/messages";
 import {
-  CURRENT_VERSION,
-  type ConversationState
+  appendNode,
+  cloneState,
+  emptyState,
+  pathFromTree,
+  selectChildOf,
+  type ConversationState,
+  type PathEntry
 } from "../../shared/conversations";
 import type { RunSettings } from "../../shared/settings";
 import { parseSseStream } from "../utils/sse";
@@ -27,17 +33,22 @@ interface SendArgs {
   settings: RunSettings;
 }
 
+interface EditArgs {
+  uuid: string;
+  nodeId: string;
+  text: string;
+  settings: RunSettings;
+}
+
 export function useChat(activeUuid: string | null) {
-  const [messages, setMessages] = useState<UiMessage[]>([]);
+  const [state, setState] = useState<ConversationState>(() => emptyState());
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const messagesRef = useRef<UiMessage[]>([]);
-  // uuids whose state was minted on this client — skip the next server load
-  // when activeUuid becomes one of these.
+  const stateRef = useRef<ConversationState>(state);
   const localUuidsRef = useRef<Set<string>>(new Set());
-  messagesRef.current = messages;
+  stateRef.current = state;
 
   const claimLocal = useCallback((uuid: string) => {
     localUuidsRef.current.add(uuid);
@@ -46,9 +57,6 @@ export function useChat(activeUuid: string | null) {
   // Load on uuid change
   useEffect(() => {
     if (activeUuid && localUuidsRef.current.has(activeUuid)) {
-      // Locally-minted: messages are already in memory and a send is in flight.
-      // Consume the marker so a later sidebar click on this uuid still triggers
-      // a server load.
       localUuidsRef.current.delete(activeUuid);
       return;
     }
@@ -59,7 +67,7 @@ export function useChat(activeUuid: string | null) {
     setError(null);
 
     if (!activeUuid) {
-      setMessages([]);
+      setState(emptyState());
       setIsLoading(false);
       return;
     }
@@ -73,13 +81,13 @@ export function useChat(activeUuid: string | null) {
         });
         if (cancelled) return;
         if (res.status === 404) {
-          setMessages([]);
+          setState(emptyState());
           return;
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const state = (await res.json()) as ConversationState;
+        const loaded = (await res.json()) as ConversationState;
         if (cancelled) return;
-        setMessages(state.messages);
+        setState(loaded);
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
       } finally {
@@ -97,42 +105,27 @@ export function useChat(activeUuid: string | null) {
     setIsStreaming(false);
   }, []);
 
-  const send = useCallback(
-    async ({ uuid, text, images, settings }: SendArgs): Promise<boolean> => {
-      if (isStreaming) return false;
-
-      const userMsg: UiUserMessage = {
-        id: newId(),
-        role: "user",
-        text,
-        images
-      };
-      const assistantId = newId();
-      const assistantMsg: UiAssistantMessage = {
-        id: assistantId,
-        role: "assistant",
-        content: ""
-      };
-
-      const base = messagesRef.current;
-      const afterUser = [...base, userMsg];
-      const withAssistantPlaceholder = [...afterUser, assistantMsg];
-      setMessages(withAssistantPlaceholder);
+  // ── Streaming primitive ───────────────────────────────────────────────
+  const stream = useCallback(
+    async (
+      uuid: string,
+      apiMessageNodes: MessageNode[],
+      assistantNodeId: string,
+      settings: RunSettings
+    ): Promise<boolean> => {
+      const controller = new AbortController();
+      abortRef.current = controller;
       setError(null);
       setIsStreaming(true);
 
-      // User-turn checkpoint (fire-and-forget — durable even if stream is cancelled).
-      void putConversation(uuid, afterUser, settings);
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      let assistantContent = "";
-      let assistantReasoning = "";
+      let content = "";
+      let reasoning = "";
       let completedNaturally = false;
 
       try {
-        const apiMessages = toApiMessages(afterUser);
+        const apiMessages = toApiMessages(
+          apiMessageNodes.map((n) => n.message)
+        );
         const res = await api.api.chat.$post(
           { json: { messages: apiMessages, settings } },
           { init: { signal: controller.signal } }
@@ -141,7 +134,6 @@ export function useChat(activeUuid: string | null) {
           const body = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
         }
-
         for await (const event of parseSseStream(res.body)) {
           if (event.data === "[DONE]") {
             completedNaturally = true;
@@ -155,22 +147,23 @@ export function useChat(activeUuid: string | null) {
           }
           const piece = delta.choices?.[0]?.delta;
           if (!piece) continue;
-          const contentChunk = piece.content ?? "";
-          const reasoningChunk = piece.reasoning_content ?? "";
-          if (!contentChunk && !reasoningChunk) continue;
-          assistantContent += contentChunk;
-          if (reasoningChunk) assistantReasoning += reasoningChunk;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId && m.role === "assistant"
-                ? {
-                    ...m,
-                    content: assistantContent,
-                    reasoning: assistantReasoning || undefined
-                  }
-                : m
-            )
-          );
+          const c = piece.content ?? "";
+          const r = piece.reasoning_content ?? "";
+          if (!c && !r) continue;
+          content += c;
+          if (r) reasoning += r;
+          setState((prev) => {
+            const next = cloneState(prev);
+            const node = next.nodes[assistantNodeId];
+            if (node && node.message.role === "assistant") {
+              node.message = {
+                ...node.message,
+                content,
+                reasoning: reasoning || undefined
+              };
+            }
+            return next;
+          });
         }
       } catch (err) {
         if ((err as { name?: string }).name !== "AbortError") {
@@ -182,32 +175,193 @@ export function useChat(activeUuid: string | null) {
       }
 
       if (completedNaturally) {
-        const finalAssistant: UiAssistantMessage = {
-          id: assistantId,
-          role: "assistant",
-          content: assistantContent,
-          reasoning: assistantReasoning || undefined
-        };
-        void putConversation(uuid, [...afterUser, finalAssistant], settings);
+        void putConversation(uuid, cloneState(stateRef.current));
       }
       return completedNaturally;
     },
-    [isStreaming]
+    []
   );
 
-  return { messages, send, stop, claimLocal, isStreaming, isLoading, error };
+  // ── Public actions ────────────────────────────────────────────────────
+
+  const send = useCallback(
+    async ({ uuid, text, images, settings }: SendArgs): Promise<boolean> => {
+      if (isStreaming) return false;
+
+      const path = pathFromTree(stateRef.current);
+      const leafId = path.length ? path[path.length - 1].node.id : null;
+
+      const userId = newId();
+      const userMsg: UiUserMessage = {
+        id: userId,
+        role: "user",
+        text,
+        images
+      };
+      const userNode: MessageNode = {
+        id: userId,
+        parentId: leafId,
+        message: userMsg,
+        childIds: [],
+        selectedChildId: null
+      };
+      const withUser = cloneState(stateRef.current);
+      withUser.settings = settings;
+      appendNode(withUser, leafId, userNode);
+      setState(withUser);
+      void putConversation(uuid, withUser);
+
+      const assistantId = newId();
+      const assistantNode: MessageNode = {
+        id: assistantId,
+        parentId: userId,
+        message: {
+          id: assistantId,
+          role: "assistant",
+          content: ""
+        } as UiAssistantMessage,
+        childIds: [],
+        selectedChildId: null
+      };
+      const withPlaceholder = cloneState(withUser);
+      appendNode(withPlaceholder, userId, assistantNode);
+      setState(withPlaceholder);
+
+      const apiNodes = [...pathToNode(withUser, userId)];
+      return stream(uuid, apiNodes, assistantId, settings);
+    },
+    [isStreaming, stream]
+  );
+
+  const retry = useCallback(
+    async (
+      uuid: string,
+      assistantNodeId: string,
+      settings: RunSettings
+    ): Promise<boolean> => {
+      if (isStreaming) return false;
+      const current = stateRef.current;
+      const original = current.nodes[assistantNodeId];
+      if (!original || original.message.role !== "assistant") return false;
+      const parentUserId = original.parentId;
+      if (!parentUserId) return false;
+
+      const newAssistantId = newId();
+      const newAssistant: MessageNode = {
+        id: newAssistantId,
+        parentId: parentUserId,
+        message: {
+          id: newAssistantId,
+          role: "assistant",
+          content: ""
+        } as UiAssistantMessage,
+        childIds: [],
+        selectedChildId: null
+      };
+      const next = cloneState(current);
+      next.settings = settings;
+      appendNode(next, parentUserId, newAssistant);
+      setState(next);
+
+      const apiNodes = pathToNode(next, parentUserId);
+      return stream(uuid, apiNodes, newAssistantId, settings);
+    },
+    [isStreaming, stream]
+  );
+
+  const editUser = useCallback(
+    async ({ uuid, nodeId, text, settings }: EditArgs): Promise<boolean> => {
+      if (isStreaming) return false;
+      const current = stateRef.current;
+      const original = current.nodes[nodeId];
+      if (!original || original.message.role !== "user") return false;
+
+      const newUserId = newId();
+      const newUserNode: MessageNode = {
+        id: newUserId,
+        parentId: original.parentId,
+        message: {
+          id: newUserId,
+          role: "user",
+          text,
+          images: original.message.images
+        },
+        childIds: [],
+        selectedChildId: null
+      };
+      const withUser = cloneState(current);
+      withUser.settings = settings;
+      appendNode(withUser, original.parentId, newUserNode);
+      setState(withUser);
+      void putConversation(uuid, withUser);
+
+      const assistantId = newId();
+      const assistantNode: MessageNode = {
+        id: assistantId,
+        parentId: newUserId,
+        message: {
+          id: assistantId,
+          role: "assistant",
+          content: ""
+        } as UiAssistantMessage,
+        childIds: [],
+        selectedChildId: null
+      };
+      const withPlaceholder = cloneState(withUser);
+      appendNode(withPlaceholder, newUserId, assistantNode);
+      setState(withPlaceholder);
+
+      const apiNodes = pathToNode(withUser, newUserId);
+      return stream(uuid, apiNodes, assistantId, settings);
+    },
+    [isStreaming, stream]
+  );
+
+  const selectSibling = useCallback(
+    (uuid: string, parentId: string | null, childId: string) => {
+      const next = cloneState(stateRef.current);
+      selectChildOf(next, parentId, childId);
+      setState(next);
+      void putConversation(uuid, next);
+    },
+    []
+  );
+
+  const path: PathEntry[] = pathFromTree(state);
+  const messages: UiMessage[] = path.map((e) => e.node.message);
+
+  return {
+    state,
+    path,
+    messages,
+    send,
+    retry,
+    editUser,
+    selectSibling,
+    stop,
+    claimLocal,
+    isStreaming,
+    isLoading,
+    error
+  };
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+function pathToNode(state: ConversationState, nodeId: string): MessageNode[] {
+  const out: MessageNode[] = [];
+  let cur: MessageNode | undefined = state.nodes[nodeId];
+  while (cur) {
+    out.push(cur);
+    cur = cur.parentId ? state.nodes[cur.parentId] : undefined;
+  }
+  return out.reverse();
 }
 
 async function putConversation(
   uuid: string,
-  messages: UiMessage[],
-  settings: RunSettings
+  state: ConversationState
 ): Promise<void> {
-  const state: ConversationState = {
-    version: CURRENT_VERSION,
-    messages,
-    settings
-  };
   try {
     await api.api.conversations[":uuid"].$put({
       param: { uuid },

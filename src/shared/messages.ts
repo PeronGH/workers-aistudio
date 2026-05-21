@@ -74,6 +74,18 @@ export type UiUserMessage = z.infer<typeof UiUserMessageSchema>;
 export type UiAssistantMessage = z.infer<typeof UiAssistantMessageSchema>;
 export type UiMessage = z.infer<typeof UiMessageSchema>;
 
+// ── Message tree node ────────────────────────────────────────────────────
+
+export const MessageNodeSchema = z.object({
+  id: z.string(),
+  parentId: z.string().nullable(),
+  message: UiMessageSchema,
+  childIds: z.array(z.string()),
+  selectedChildId: z.string().nullable()
+});
+
+export type MessageNode = z.infer<typeof MessageNodeSchema>;
+
 // ── Shape conversion ─────────────────────────────────────────────────────
 
 export function toApiMessages(messages: UiMessage[]): ChatMessage[] {

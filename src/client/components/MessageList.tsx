@@ -1,26 +1,34 @@
 import { useEffect, useRef } from "react";
 import { Empty, Text } from "@cloudflare/kumo";
 import { ChatCircleDotsIcon, ImageIcon } from "@phosphor-icons/react";
-import type { UiMessage } from "../../shared/messages";
+import type { PathEntry } from "../../shared/conversations";
 import { Message } from "./Message";
 
 interface MessageListProps {
-  messages: UiMessage[];
+  path: PathEntry[];
   isStreaming: boolean;
   showDebug: boolean;
   isDragging: boolean;
+  readOnly?: boolean;
+  onRetry: (assistantNodeId: string) => void;
+  onEdit: (userNodeId: string, text: string) => void;
+  onSelectSibling: (parentId: string | null, childId: string) => void;
 }
 
 export function MessageList({
-  messages,
+  path,
   isStreaming,
   showDebug,
-  isDragging
+  isDragging,
+  readOnly = false,
+  onRetry,
+  onEdit,
+  onSelectSibling
 }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [path]);
 
   return (
     <div className="flex-1 overflow-y-auto relative">
@@ -35,22 +43,26 @@ export function MessageList({
         </div>
       )}
       <div className="max-w-4xl mx-auto px-5 py-6 space-y-5">
-        {messages.length === 0 && (
+        {path.length === 0 && (
           <Empty
             icon={<ChatCircleDotsIcon size={32} />}
             title="Start a conversation"
           />
         )}
 
-        {messages.map((message, i) => (
+        {path.map((entry, i) => (
           <Message
-            key={message.id}
-            message={message}
+            key={entry.node.id}
+            entry={entry}
             isLastAssistant={
-              message.role === "assistant" && i === messages.length - 1
+              entry.node.message.role === "assistant" && i === path.length - 1
             }
             isStreaming={isStreaming}
             showDebug={showDebug}
+            readOnly={readOnly}
+            onRetry={onRetry}
+            onEdit={onEdit}
+            onSelectSibling={onSelectSibling}
           />
         ))}
         <div ref={endRef} />

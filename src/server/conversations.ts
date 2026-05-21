@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { ConversationStateSchema } from "../shared/conversations";
+import {
+  ConversationStateSchema,
+  StoredSchema,
+  migrate
+} from "../shared/conversations";
 
 const PREFIX = "conversations/";
 const UuidParamSchema = z.object({ uuid: z.uuid() });
@@ -20,14 +24,14 @@ export const conversationRoutes = new Hono<{ Bindings: Env }>()
     } catch {
       return c.json({ error: "Stored conversation is not valid JSON" }, 500);
     }
-    const result = ConversationStateSchema.safeParse(parsed);
+    const result = StoredSchema.safeParse(parsed);
     if (!result.success) {
       return c.json(
         { error: "Stored conversation failed schema validation" },
         409
       );
     }
-    return c.json(result.data);
+    return c.json(migrate(result.data));
   })
   .put(
     "/:uuid",
