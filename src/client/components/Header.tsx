@@ -3,7 +3,7 @@ import {
   BugIcon,
   ChatCircleDotsIcon,
   CircleIcon,
-  TrashIcon
+  ListIcon
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -11,19 +11,27 @@ interface HeaderProps {
   isStreaming: boolean;
   showDebug: boolean;
   onToggleDebug: (next: boolean) => void;
-  onClear: () => void;
+  onOpenSidebar: () => void;
 }
 
 export function Header({
   isStreaming,
   showDebug,
   onToggleDebug,
-  onClear
+  onOpenSidebar
 }: HeaderProps) {
   return (
     <header className="px-5 py-4 bg-kumo-base border-b border-kumo-line">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            shape="square"
+            aria-label="Open sidebar"
+            icon={<ListIcon size={16} />}
+            onClick={onOpenSidebar}
+            className="md:hidden"
+          />
           <h1 className="text-lg font-semibold text-kumo-default">
             <span className="mr-2">⛅</span>Workers AI Studio
           </h1>
@@ -53,13 +61,6 @@ export function Header({
             />
           </div>
           <ThemeToggle />
-          <Button
-            variant="secondary"
-            icon={<TrashIcon size={16} />}
-            onClick={onClear}
-          >
-            Clear
-          </Button>
         </div>
       </div>
     </header>

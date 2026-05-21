@@ -1,0 +1,154 @@
+import { Text } from "@cloudflare/kumo";
+import {
+  ChatCircleDotsIcon,
+  PencilSimpleLineIcon,
+  TrashIcon,
+  XIcon
+} from "@phosphor-icons/react";
+import type { ConversationIndexEntry } from "../hooks/useConversations";
+
+interface SidebarProps {
+  entries: ConversationIndexEntry[];
+  activeUuid: string | null;
+  drawerOpen: boolean;
+  onCloseDrawer: () => void;
+  onNewChat: () => void;
+  onSelect: (uuid: string) => void;
+  onDelete: (uuid: string) => void;
+}
+
+export function Sidebar({
+  entries,
+  activeUuid,
+  drawerOpen,
+  onCloseDrawer,
+  onNewChat,
+  onSelect,
+  onDelete
+}: SidebarProps) {
+  return (
+    <>
+      {drawerOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={onCloseDrawer}
+          className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+        />
+      )}
+      <aside
+        className={`${
+          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col transition-transform`}
+      >
+        <div className="px-3 py-3 border-b border-kumo-line flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              onNewChat();
+              onCloseDrawer();
+            }}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors"
+          >
+            <PencilSimpleLineIcon size={14} />
+            New chat
+          </button>
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            onClick={onCloseDrawer}
+            className="md:hidden p-1 rounded text-kumo-inactive hover:text-kumo-default"
+          >
+            <XIcon size={16} />
+          </button>
+        </div>
+        <ul className="flex-1 overflow-y-auto p-2 space-y-1">
+          {entries.length === 0 && (
+            <li className="px-2 py-6 text-center">
+              <Text size="xs" variant="secondary">
+                No conversations yet.
+              </Text>
+            </li>
+          )}
+          {entries.map((entry) => (
+            <SidebarRow
+              key={entry.uuid}
+              entry={entry}
+              active={entry.uuid === activeUuid}
+              onSelect={() => {
+                onSelect(entry.uuid);
+                onCloseDrawer();
+              }}
+              onDelete={() => onDelete(entry.uuid)}
+            />
+          ))}
+        </ul>
+      </aside>
+    </>
+  );
+}
+
+function SidebarRow({
+  entry,
+  active,
+  onSelect,
+  onDelete
+}: {
+  entry: ConversationIndexEntry;
+  active: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  const title = entry.title || "Image";
+  return (
+    <li
+      className={`group flex items-center gap-1 px-1 rounded-md transition-colors ${
+        active ? "bg-kumo-control" : "hover:bg-kumo-control/50"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex-1 min-w-0 flex items-center gap-2 px-1 py-1.5 text-left"
+      >
+        <ChatCircleDotsIcon size={14} className="shrink-0 text-kumo-inactive" />
+        <div className="flex-1 min-w-0">
+          <div className="truncate text-sm text-kumo-default">{title}</div>
+          <div className="text-[10px] text-kumo-subtle">
+            {formatRelative(entry.updatedAt)}
+          </div>
+        </div>
+      </button>
+      <button
+        type="button"
+        aria-label="Delete conversation"
+        onClick={() => {
+          if (confirm(`Delete "${title}"?`)) onDelete();
+        }}
+        className="opacity-0 group-hover:opacity-100 p-1 rounded text-kumo-inactive hover:text-kumo-danger transition-opacity"
+      >
+        <TrashIcon size={12} />
+      </button>
+    </li>
+  );
+}
+
+const RTF = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+const UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+  ["year", 31_536_000_000],
+  ["month", 2_592_000_000],
+  ["week", 604_800_000],
+  ["day", 86_400_000],
+  ["hour", 3_600_000],
+  ["minute", 60_000],
+  ["second", 1_000]
+];
+
+function formatRelative(ts: number): string {
+  const diff = ts - Date.now();
+  const abs = Math.abs(diff);
+  for (const [unit, ms] of UNITS) {
+    if (abs >= ms) return RTF.format(Math.round(diff / ms), unit);
+  }
+  return "just now";
+}

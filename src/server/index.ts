@@ -1,21 +1,37 @@
-import { handleChat } from "./chat";
-import { handleUpload, serveUpload } from "./upload";
+import { Hono } from "hono";
+import { chatHandler, chatValidator } from "./chat";
+import {
+  conversationBodyValidator,
+  deleteConversationHandler,
+  getConversationHandler,
+  putConversationHandler,
+  uuidParamValidator
+} from "./conversations";
+import { serveUploadHandler, uploadHandler } from "./upload";
 
 const MODEL = "@cf/moonshotai/kimi-k2.6";
 
-export default {
-  async fetch(request: Request, env: Env) {
-    const url = new URL(request.url);
-    if (url.pathname === "/api/chat" && request.method === "POST") {
-      return handleChat(request, env, MODEL);
-    }
-    if (url.pathname === "/api/upload" && request.method === "POST") {
-      return handleUpload(request, env);
-    }
-    if (url.pathname.startsWith("/api/upload/") && request.method === "GET") {
-      const key = decodeURIComponent(url.pathname.slice("/api/upload/".length));
-      return serveUpload(key, env);
-    }
-    return new Response("Not found", { status: 404 });
-  }
-} satisfies ExportedHandler<Env>;
+const app = new Hono<{ Bindings: Env }>();
+
+app.post("/api/chat", chatValidator, (c) => chatHandler(c, MODEL));
+
+app.post("/api/upload", uploadHandler);
+app.get("/api/upload/:key", serveUploadHandler);
+
+app
+  .get("/api/conversations/:uuid", uuidParamValidator, getConversationHandler)
+  .put(
+    "/api/conversations/:uuid",
+    uuidParamValidator,
+    conversationBodyValidator,
+    putConversationHandler
+  )
+  .delete(
+    "/api/conversations/:uuid",
+    uuidParamValidator,
+    deleteConversationHandler
+  );
+
+app.notFound((c) => c.text("Not found", 404));
+
+export default app;

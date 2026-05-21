@@ -1,39 +1,37 @@
 import { z } from "zod";
+import type { Context } from "hono";
+import { zValidator } from "@hono/zod-validator";
 import { ChatMessageSchema, type ChatMessage } from "../shared/messages";
 import { RunSettingsSchema, type RunSettings } from "../shared/settings";
 
-const RequestSchema = z.object({
+const ChatRequestSchema = z.object({
   messages: z.array(ChatMessageSchema).min(1),
   settings: RunSettingsSchema.optional()
 });
 
-export async function handleChat(
-  request: Request,
-  env: Env,
+export const chatValidator = zValidator("json", ChatRequestSchema);
+
+export async function chatHandler(
+  c: Context<{ Bindings: Env }>,
   model: string
 ): Promise<Response> {
-  let parsed;
-  try {
-    parsed = RequestSchema.parse(await request.json());
-  } catch (err) {
-    return Response.json(
-      { error: "Invalid request body", details: String(err) },
-      { status: 400 }
-    );
-  }
+  const { messages, settings = {} } = (
+    c.req as unknown as {
+      valid(target: "json"): z.infer<typeof ChatRequestSchema>;
+    }
+  ).valid("json");
 
-  const { messages, settings = {} } = parsed;
   const payload = buildPayload(messages, settings);
 
-  const stream = (await env.AI.run(
+  const upstream = (await c.env.AI.run(
     model as Parameters<Ai["run"]>[0],
     payload as never,
     { returnRawResponse: true }
   )) as unknown;
 
-  if (stream instanceof Response) {
-    return new Response(stream.body, {
-      status: stream.status,
+  if (upstream instanceof Response) {
+    return new Response(upstream.body, {
+      status: upstream.status,
       headers: {
         "content-type": "text/event-stream",
         "cache-control": "no-cache"
@@ -41,8 +39,8 @@ export async function handleChat(
     });
   }
 
-  if (stream instanceof ReadableStream) {
-    return new Response(stream, {
+  if (upstream instanceof ReadableStream) {
+    return new Response(upstream, {
       headers: {
         "content-type": "text/event-stream",
         "cache-control": "no-cache"
