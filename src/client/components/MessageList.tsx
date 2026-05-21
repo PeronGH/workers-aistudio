@@ -9,22 +9,13 @@ interface MessageListProps {
   isStreaming: boolean;
   showDebug: boolean;
   isDragging: boolean;
-  onPickPrompt: (prompt: string) => void;
 }
-
-const STARTER_PROMPTS = [
-  "Explain how Mixture-of-Experts inference works.",
-  "Draft a one-paragraph product announcement.",
-  "Summarize the latest news on Cloudflare Workers.",
-  "Write a short shell one-liner to find the 10 largest files in a directory."
-];
 
 export function MessageList({
   messages,
   isStreaming,
   showDebug,
-  isDragging,
-  onPickPrompt
+  isDragging
 }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -48,20 +39,6 @@ export function MessageList({
           <Empty
             icon={<ChatCircleDotsIcon size={32} />}
             title="Start a conversation"
-            contents={
-              <div className="flex flex-wrap justify-center gap-2">
-                {STARTER_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    className="px-3 py-1.5 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors"
-                    onClick={() => onPickPrompt(prompt)}
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            }
           />
         )}
 

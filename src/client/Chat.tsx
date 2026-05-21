@@ -51,7 +51,6 @@ export function Chat() {
             isStreaming={isStreaming}
             showDebug={showDebug}
             isDragging={att.isDragging}
-            onPickPrompt={(prompt) => setInput(prompt)}
           />
           {error && (
             <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-danger">
