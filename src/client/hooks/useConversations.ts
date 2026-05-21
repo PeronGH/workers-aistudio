@@ -8,11 +8,9 @@ export interface ConversationIndexEntry {
 }
 
 const INDEX_KEY = "wai-studio:conversations";
-const ACTIVE_KEY = "wai-studio:active-conversation";
 
 export function useConversations() {
   const [index, setIndex] = useState<ConversationIndexEntry[]>(loadIndex);
-  const [activeUuid, setActiveUuid] = useState<string | null>(loadActive);
 
   useEffect(() => {
     try {
@@ -22,29 +20,16 @@ export function useConversations() {
     }
   }, [index]);
 
-  useEffect(() => {
-    if (activeUuid) localStorage.setItem(ACTIVE_KEY, activeUuid);
-    else localStorage.removeItem(ACTIVE_KEY);
-  }, [activeUuid]);
-
-  const startNew = useCallback((title: string): string => {
-    const uuid = crypto.randomUUID();
+  const add = useCallback((uuid: string, title: string) => {
     const now = Date.now();
     setIndex((prev) => [
       { uuid, title, createdAt: now, updatedAt: now },
       ...prev
     ]);
-    setActiveUuid(uuid);
-    return uuid;
-  }, []);
-
-  const select = useCallback((uuid: string | null) => {
-    setActiveUuid(uuid);
   }, []);
 
   const remove = useCallback((uuid: string) => {
     setIndex((prev) => prev.filter((e) => e.uuid !== uuid));
-    setActiveUuid((prev) => (prev === uuid ? null : prev));
   }, []);
 
   const touch = useCallback((uuid: string) => {
@@ -53,7 +38,7 @@ export function useConversations() {
     );
   }, []);
 
-  return { index, activeUuid, startNew, select, remove, touch };
+  return { index, add, remove, touch };
 }
 
 function loadIndex(): ConversationIndexEntry[] {
@@ -64,13 +49,5 @@ function loadIndex(): ConversationIndexEntry[] {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
-  }
-}
-
-function loadActive(): string | null {
-  try {
-    return localStorage.getItem(ACTIVE_KEY);
-  } catch {
-    return null;
   }
 }

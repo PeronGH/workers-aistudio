@@ -34,10 +34,25 @@ export function useChat(activeUuid: string | null) {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const messagesRef = useRef<UiMessage[]>([]);
+  // uuids whose state was minted on this client — skip the next server load
+  // when activeUuid becomes one of these.
+  const localUuidsRef = useRef<Set<string>>(new Set());
   messagesRef.current = messages;
+
+  const claimLocal = useCallback((uuid: string) => {
+    localUuidsRef.current.add(uuid);
+  }, []);
 
   // Load on uuid change
   useEffect(() => {
+    if (activeUuid && localUuidsRef.current.has(activeUuid)) {
+      // Locally-minted: messages are already in memory and a send is in flight.
+      // Consume the marker so a later sidebar click on this uuid still triggers
+      // a server load.
+      localUuidsRef.current.delete(activeUuid);
+      return;
+    }
+
     abortRef.current?.abort();
     abortRef.current = null;
     setIsStreaming(false);
@@ -180,7 +195,7 @@ export function useChat(activeUuid: string | null) {
     [isStreaming]
   );
 
-  return { messages, send, stop, isStreaming, isLoading, error };
+  return { messages, send, stop, claimLocal, isStreaming, isLoading, error };
 }
 
 async function putConversation(

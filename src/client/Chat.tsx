@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useChat } from "./hooks/useChat";
 import { useConversations } from "./hooks/useConversations";
+import { useActiveUuid } from "./hooks/useActiveUuid";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useAttachments } from "./hooks/useAttachments";
 import { uploadImage } from "./utils/attachments";
@@ -17,10 +18,10 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeUuid, navigate] = useActiveUuid();
   const conversations = useConversations();
-  const { messages, send, stop, isStreaming, isLoading, error } = useChat(
-    conversations.activeUuid
-  );
+  const { messages, send, stop, claimLocal, isStreaming, isLoading, error } =
+    useChat(activeUuid);
   const { settings, update, reset } = useRunSettings();
   const att = useAttachments();
 
@@ -35,15 +36,29 @@ export function Chat() {
       }))
     );
 
-    const uuid = conversations.activeUuid
-      ? conversations.activeUuid
-      : conversations.startNew(text.slice(0, TITLE_MAX));
+    let uuid = activeUuid;
+    if (!uuid) {
+      uuid = crypto.randomUUID();
+      conversations.add(uuid, text.slice(0, TITLE_MAX));
+      claimLocal(uuid);
+      navigate(uuid);
+    }
 
     setInput("");
     att.clear();
     const ok = await send({ uuid, text, images, settings });
     if (ok) conversations.touch(uuid);
-  }, [input, att, isStreaming, send, settings, conversations]);
+  }, [
+    input,
+    att,
+    isStreaming,
+    send,
+    settings,
+    activeUuid,
+    conversations,
+    navigate,
+    claimLocal
+  ]);
 
   const handleDelete = useCallback(
     async (uuid: string) => {
@@ -53,8 +68,9 @@ export function Chat() {
         /* ignore */
       }
       conversations.remove(uuid);
+      if (activeUuid === uuid) navigate(null);
     },
-    [conversations]
+    [conversations, activeUuid, navigate]
   );
 
   return (
@@ -66,11 +82,11 @@ export function Chat() {
     >
       <Sidebar
         entries={conversations.index}
-        activeUuid={conversations.activeUuid}
+        activeUuid={activeUuid}
         drawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
-        onNewChat={() => conversations.select(null)}
-        onSelect={(uuid) => conversations.select(uuid)}
+        onNewChat={() => navigate(null)}
+        onSelect={(uuid) => navigate(uuid)}
         onDelete={handleDelete}
       />
       <div className="flex flex-col flex-1 min-w-0">
