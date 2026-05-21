@@ -15,12 +15,12 @@ This project uses **bun**. Use `bun install`, `bun add`, `bun run <script>`, and
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `bun run dev` | Local development |
-| `bun run deploy` | Deploy to Cloudflare |
-| `bun run types` | Generate TypeScript types |
-| `bunx wrangler <cmd>` | Ad-hoc Wrangler commands |
+| Command               | Purpose                   |
+| --------------------- | ------------------------- |
+| `bun run dev`         | Local development         |
+| `bun run deploy`      | Deploy to Cloudflare      |
+| `bun run types`       | Generate TypeScript types |
+| `bunx wrangler <cmd>` | Ad-hoc Wrangler commands  |
 
 Run `bun run types` after changing bindings in wrangler.jsonc.
 
