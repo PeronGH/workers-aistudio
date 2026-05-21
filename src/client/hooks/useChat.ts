@@ -7,7 +7,9 @@ import { parseSseStream } from "../utils/sse";
 const STORAGE_KEY = "wai-studio:messages";
 
 interface ChatDelta {
-  choices?: { delta?: { content?: string; reasoning_content?: string } }[];
+  choices?: {
+    delta?: { content?: string | null; reasoning_content?: string | null };
+  }[];
 }
 
 export interface SendArgs {
@@ -88,22 +90,22 @@ export function useChat() {
           }
           const piece = delta.choices?.[0]?.delta;
           if (!piece) continue;
-          if (piece.content || piece.reasoning_content) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId && m.role === "assistant"
-                  ? {
-                      ...m,
-                      content: m.content + (piece.content ?? ""),
-                      reasoning:
-                        piece.reasoning_content !== undefined
-                          ? (m.reasoning ?? "") + piece.reasoning_content
-                          : m.reasoning
-                    }
-                  : m
-              )
-            );
-          }
+          const contentChunk = piece.content ?? "";
+          const reasoningChunk = piece.reasoning_content ?? "";
+          if (!contentChunk && !reasoningChunk) continue;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId && m.role === "assistant"
+                ? {
+                    ...m,
+                    content: m.content + contentChunk,
+                    reasoning: reasoningChunk
+                      ? (m.reasoning ?? "") + reasoningChunk
+                      : m.reasoning
+                  }
+                : m
+            )
+          );
         }
       } catch (err) {
         if ((err as { name?: string }).name !== "AbortError") {

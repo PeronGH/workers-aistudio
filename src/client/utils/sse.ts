@@ -3,17 +3,16 @@ export interface SseEvent {
 }
 
 export async function* parseSseStream(
-  stream: ReadableStream<Uint8Array>
+  stream: ReadableStream<BufferSource>
 ): AsyncGenerator<SseEvent> {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder("utf-8");
+  const reader = stream.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
 
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+      buffer += value;
 
       let sep: number;
       while ((sep = indexOfDoubleNewline(buffer)) !== -1) {
