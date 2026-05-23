@@ -26,9 +26,10 @@ export function MessageList({
   onSelectSibling
 }: MessageListProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const lastId = path[path.length - 1]?.node.id;
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [path]);
+  }, [path.length, lastId]);
 
   return (
     <div className="flex-1 overflow-y-auto relative">

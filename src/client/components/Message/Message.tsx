@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { PathEntry } from "../../../shared/conversations";
 import { UserBubble } from "./UserBubble";
 import { AssistantBubble } from "./AssistantBubble";
@@ -14,7 +15,9 @@ interface MessageProps {
   onSelectSibling: (parentId: string | null, childId: string) => void;
 }
 
-export function Message({
+export const Message = memo(MessageImpl);
+
+function MessageImpl({
   entry,
   isLastAssistant,
   isStreaming,

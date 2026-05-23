@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   newId,
   toApiMessages,
@@ -159,16 +159,22 @@ export function useChat(
           content += c;
           if (r) reasoning += r;
           setState((prev) => {
-            const next = cloneState(prev);
-            const node = next.nodes[assistantNodeId];
-            if (node && node.message.role === "assistant") {
-              node.message = {
-                ...node.message,
-                content,
-                reasoning: reasoning || undefined
-              };
-            }
-            return next;
+            const node = prev.nodes[assistantNodeId];
+            if (!node || node.message.role !== "assistant") return prev;
+            return {
+              ...prev,
+              nodes: {
+                ...prev.nodes,
+                [assistantNodeId]: {
+                  ...node,
+                  message: {
+                    ...node.message,
+                    content,
+                    reasoning: reasoning || undefined
+                  }
+                }
+              }
+            };
           });
         }
       } catch (err) {
@@ -333,8 +339,11 @@ export function useChat(
     []
   );
 
-  const path: PathEntry[] = pathFromTree(state);
-  const messages: UiMessage[] = path.map((e) => e.node.message);
+  const path: PathEntry[] = useMemo(() => pathFromTree(state), [state]);
+  const messages: UiMessage[] = useMemo(
+    () => path.map((e) => e.node.message),
+    [path]
+  );
 
   return {
     state,

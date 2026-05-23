@@ -98,6 +98,28 @@ export function Chat() {
     navigate
   ]);
 
+  const handleRetry = useCallback(
+    (id: string) => {
+      if (activeUuid) void retry(activeUuid, id, settings);
+    },
+    [activeUuid, retry, settings]
+  );
+
+  const handleEdit = useCallback(
+    (id: string, text: string) => {
+      if (activeUuid)
+        void editUser({ uuid: activeUuid, nodeId: id, text, settings });
+    },
+    [activeUuid, editUser, settings]
+  );
+
+  const handleSelectSibling = useCallback(
+    (parentId: string | null, childId: string) => {
+      if (activeUuid) selectSibling(activeUuid, parentId, childId);
+    },
+    [activeUuid, selectSibling]
+  );
+
   const handleDelete = useCallback(
     async (uuid: string) => {
       try {
@@ -142,21 +164,9 @@ export function Chat() {
               showDebug={showDebug}
               isDragging={att.isDragging}
               readOnly={isShared}
-              onRetry={(id) => {
-                if (activeUuid) void retry(activeUuid, id, settings);
-              }}
-              onEdit={(id, text) => {
-                if (activeUuid)
-                  void editUser({
-                    uuid: activeUuid,
-                    nodeId: id,
-                    text,
-                    settings
-                  });
-              }}
-              onSelectSibling={(parentId, childId) => {
-                if (activeUuid) selectSibling(activeUuid, parentId, childId);
-              }}
+              onRetry={handleRetry}
+              onEdit={handleEdit}
+              onSelectSibling={handleSelectSibling}
             />
             {isLoading && (
               <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-subtle">
