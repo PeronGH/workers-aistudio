@@ -61,10 +61,8 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   }
   if (settings.seed !== undefined) out.seed = settings.seed;
 
-  if (resolved.thinking === "none") {
+  if (resolved.thinking === false) {
     out.chat_template_kwargs = { thinking: false };
-  } else if (resolved.thinking) {
-    out.reasoning_effort = resolved.thinking;
   }
 
   return out;

@@ -16,11 +16,9 @@ import {
   PRESET_VALUES,
   STOP_MAX,
   TEMPERATURE_RANGE,
-  THINKING_LEVELS,
   TOP_P_RANGE,
   type Preset,
-  type RunSettings,
-  type ThinkingLevel
+  type RunSettings
 } from "../../shared/settings";
 
 interface SettingsPanelProps {
@@ -173,23 +171,20 @@ function SamplingThinkingField({
   disabled,
   onChange
 }: {
-  value: ThinkingLevel | undefined;
+  value: boolean | undefined;
   disabled: boolean;
-  onChange: (v: ThinkingLevel | undefined) => void;
+  onChange: (v: boolean) => void;
 }) {
+  const on = value !== false;
   return (
-    <section className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <Label>Thinking</Label>
-        <Text size="xs" variant="secondary">
-          {value ?? "default"}
-        </Text>
-      </div>
-      <Segmented
-        options={THINKING_LEVELS}
-        value={value}
+    <section className="flex items-center justify-between">
+      <Label>Thinking</Label>
+      <Switch
+        checked={on}
         disabled={disabled}
-        onChange={onChange}
+        onCheckedChange={onChange}
+        size="sm"
+        aria-label="Enable thinking"
       />
     </section>
   );
