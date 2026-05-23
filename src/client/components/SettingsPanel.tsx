@@ -110,6 +110,7 @@ function SystemPromptField({
       <textarea
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
+        aria-label="System instructions"
         placeholder="Empty system prompt."
         rows={5}
         className="w-full px-3 py-2 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent resize-y"
@@ -147,6 +148,7 @@ function NumberSlider({
         step={range.step}
         value={display}
         disabled={!enabled}
+        aria-label={label}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full accent-kumo-brand disabled:opacity-40"
       />
@@ -248,6 +250,7 @@ function StopField({
           }
         }}
         onBlur={add}
+        aria-label="Add stop sequence"
         placeholder={items.length >= STOP_MAX ? "Max 4" : "Press Enter to add"}
         disabled={items.length >= STOP_MAX}
         className="w-full px-2.5 py-1.5 text-sm font-mono rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent disabled:opacity-40"

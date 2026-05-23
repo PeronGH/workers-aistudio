@@ -47,6 +47,7 @@ export function Composer({
         type="file"
         multiple
         accept="image/*"
+        aria-label="Attach images"
         className="hidden"
         onChange={(e) => {
           if (e.target.files) onAddFiles(e.target.files);

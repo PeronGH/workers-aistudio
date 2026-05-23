@@ -15,6 +15,7 @@ export function UserEditor({ initial, onSave, onCancel }: UserEditorProps) {
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          aria-label="Edit message"
           rows={3}
           className="w-full px-3 py-2 text-sm rounded-2xl rounded-br-md border border-kumo-line bg-kumo-base text-kumo-default focus:outline-none focus:ring-1 focus:ring-kumo-accent resize-y"
         />
