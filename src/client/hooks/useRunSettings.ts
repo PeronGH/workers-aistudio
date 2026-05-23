@@ -32,7 +32,9 @@ export function useRunSettings() {
 
   const reset = useCallback(() => setSettings({}), []);
 
-  return { settings, update, reset };
+  const replace = useCallback((next: RunSettings) => setSettings(next), []);
+
+  return { settings, update, reset, replace };
 }
 
 function load(): RunSettings {

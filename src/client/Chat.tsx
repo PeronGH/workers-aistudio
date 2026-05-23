@@ -22,6 +22,7 @@ export function Chat() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeUuid, navigate] = useActiveUuid();
   const conversations = useConversations();
+  const { settings, update, reset, replace } = useRunSettings();
   const {
     state,
     path,
@@ -35,8 +36,7 @@ export function Chat() {
     isStreaming,
     isLoading,
     error
-  } = useChat(activeUuid);
-  const { settings, update, reset } = useRunSettings();
+  } = useChat(activeUuid, (loaded) => replace(loaded.settings));
   const att = useAttachments();
 
   const submit = useCallback(async () => {

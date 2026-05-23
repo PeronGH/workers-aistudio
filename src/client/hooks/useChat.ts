@@ -40,7 +40,10 @@ interface EditArgs {
   settings: RunSettings;
 }
 
-export function useChat(activeUuid: string | null) {
+export function useChat(
+  activeUuid: string | null,
+  onLoaded?: (state: ConversationState) => void
+) {
   const [state, setState] = useState<ConversationState>(() => emptyState());
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +51,8 @@ export function useChat(activeUuid: string | null) {
   const abortRef = useRef<AbortController | null>(null);
   const stateRef = useRef<ConversationState>(state);
   const localUuidsRef = useRef<Set<string>>(new Set());
+  const onLoadedRef = useRef(onLoaded);
+  onLoadedRef.current = onLoaded;
   stateRef.current = state;
 
   const claimLocal = useCallback((uuid: string) => {
@@ -88,6 +93,7 @@ export function useChat(activeUuid: string | null) {
         const loaded = (await res.json()) as ConversationState;
         if (cancelled) return;
         setState(loaded);
+        onLoadedRef.current?.(loaded);
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
       } finally {
