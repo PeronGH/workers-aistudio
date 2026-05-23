@@ -27,9 +27,7 @@ export function Header({
             onClick={onOpenSidebar}
             className="md:hidden"
           />
-          <h1 className="text-lg font-semibold text-kumo-default">
-            AI Studio
-          </h1>
+          <h1 className="text-lg font-semibold text-kumo-default">AI Studio</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
