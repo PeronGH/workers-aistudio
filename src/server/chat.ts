@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { ChatMessageSchema, type ChatMessage } from "../shared/messages";
-import { RunSettingsSchema, type RunSettings } from "../shared/settings";
+import {
+  DEFAULT_PRESET,
+  PRESET_VALUES,
+  RunSettingsSchema,
+  type RunSettings
+} from "../shared/settings";
 
 const MODEL = "@cf/moonshotai/kimi-k2.6";
 
@@ -35,14 +40,15 @@ export const chatRoutes = new Hono<{ Bindings: Env }>().post(
 );
 
 function buildPayload(messages: ChatMessage[], settings: RunSettings) {
+  const resolved = resolveSampling(settings);
   const out: Record<string, unknown> = {
     messages: withSystemPrompt(messages, settings.systemPrompt),
     stream: true
   };
 
-  if (settings.temperature !== undefined)
-    out.temperature = settings.temperature;
-  if (settings.top_p !== undefined) out.top_p = settings.top_p;
+  if (resolved.temperature !== undefined)
+    out.temperature = resolved.temperature;
+  if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
   if (settings.max_completion_tokens !== undefined) {
     out.max_completion_tokens = settings.max_completion_tokens;
   }
@@ -55,13 +61,26 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   }
   if (settings.seed !== undefined) out.seed = settings.seed;
 
-  if (settings.thinking === "none") {
+  if (resolved.thinking === "none") {
     out.chat_template_kwargs = { thinking: false };
-  } else if (settings.thinking) {
-    out.reasoning_effort = settings.thinking;
+  } else if (resolved.thinking) {
+    out.reasoning_effort = resolved.thinking;
   }
 
   return out;
+}
+
+function resolveSampling(settings: RunSettings) {
+  const preset = settings.preset ?? DEFAULT_PRESET;
+  if (preset === "manual") {
+    return {
+      temperature: settings.temperature,
+      top_p: settings.top_p,
+      thinking: settings.thinking
+    };
+  }
+  const p = PRESET_VALUES[preset];
+  return { temperature: p.temperature, top_p: p.top_p, thinking: p.thinking };
 }
 
 function withSystemPrompt(

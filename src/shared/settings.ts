@@ -5,9 +5,12 @@ export const TOP_P_RANGE = { min: 0, max: 1, step: 0.01 } as const;
 export const PENALTY_RANGE = { min: -2, max: 2, step: 0.1 } as const;
 export const STOP_MAX = 4;
 export const THINKING_LEVELS = ["none", "low", "medium", "high"] as const;
+export const PRESETS = ["thinking", "instant", "manual"] as const;
+export const DEFAULT_PRESET: Preset = "thinking";
 
 export const RunSettingsSchema = z
   .object({
+    preset: z.enum(PRESETS),
     systemPrompt: z.string(),
     temperature: z
       .number()
@@ -25,3 +28,12 @@ export const RunSettingsSchema = z
 
 export type RunSettings = z.infer<typeof RunSettingsSchema>;
 export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
+export type Preset = (typeof PRESETS)[number];
+
+export const PRESET_VALUES: Record<
+  Exclude<Preset, "manual">,
+  { temperature: number; top_p: number; thinking?: ThinkingLevel }
+> = {
+  thinking: { temperature: 1.0, top_p: 0.95 },
+  instant: { temperature: 0.6, top_p: 0.95, thinking: "none" }
+};

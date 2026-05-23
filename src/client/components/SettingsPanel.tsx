@@ -10,11 +10,15 @@ import {
 import { Collapsible } from "@cloudflare/kumo/components/collapsible";
 import { CaretDownIcon, CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import {
+  DEFAULT_PRESET,
   PENALTY_RANGE,
+  PRESETS,
+  PRESET_VALUES,
   STOP_MAX,
   TEMPERATURE_RANGE,
   THINKING_LEVELS,
   TOP_P_RANGE,
+  type Preset,
   type RunSettings,
   type ThinkingLevel
 } from "../../shared/settings";
@@ -47,37 +51,20 @@ export function SettingsPanel({
           onChange={(v) => onUpdate({ systemPrompt: v })}
         />
 
-        <NumberSlider
-          label="Temperature"
-          value={settings.temperature}
-          range={TEMPERATURE_RANGE}
-          seed={1}
-          onChange={(v) => onUpdate({ temperature: v })}
-        />
-        <NumberSlider
-          label="Top P"
-          value={settings.top_p}
-          range={TOP_P_RANGE}
-          seed={1}
-          onChange={(v) => onUpdate({ top_p: v })}
-        />
-        <NumberInputField
-          label="Max completion tokens"
-          value={settings.max_completion_tokens}
-          seed={1024}
-          min={1}
-          onChange={(v) => onUpdate({ max_completion_tokens: v })}
-        />
-        <StopField
-          value={settings.stop}
-          onChange={(v) => onUpdate({ stop: v })}
-        />
-        <ThinkingField
-          value={settings.thinking}
-          onChange={(v) => onUpdate({ thinking: v })}
-        />
+        <SamplingFields settings={settings} onUpdate={onUpdate} />
 
         <AdvancedSection>
+          <NumberInputField
+            label="Max completion tokens"
+            value={settings.max_completion_tokens}
+            seed={1024}
+            min={1}
+            onChange={(v) => onUpdate({ max_completion_tokens: v })}
+          />
+          <StopField
+            value={settings.stop}
+            onChange={(v) => onUpdate({ stop: v })}
+          />
           <NumberSlider
             label="Frequency penalty"
             value={settings.frequency_penalty}
@@ -101,6 +88,134 @@ export function SettingsPanel({
         </AdvancedSection>
       </div>
     </aside>
+  );
+}
+
+function SamplingFields({
+  settings,
+  onUpdate
+}: {
+  settings: RunSettings;
+  onUpdate: (patch: Partial<RunSettings>) => void;
+}) {
+  const preset = settings.preset ?? DEFAULT_PRESET;
+  const isManual = preset === "manual";
+  const presetValues = isManual ? null : PRESET_VALUES[preset];
+  const temperature = presetValues
+    ? presetValues.temperature
+    : (settings.temperature ?? 1.0);
+  const topP = presetValues ? presetValues.top_p : (settings.top_p ?? 0.95);
+  const thinking = presetValues ? presetValues.thinking : settings.thinking;
+  return (
+    <>
+      <PresetField value={preset} onChange={(v) => onUpdate({ preset: v })} />
+      <SamplingSlider
+        label="Temperature"
+        value={temperature}
+        range={TEMPERATURE_RANGE}
+        disabled={!isManual}
+        onChange={(v) => onUpdate({ temperature: v })}
+      />
+      <SamplingSlider
+        label="Top P"
+        value={topP}
+        range={TOP_P_RANGE}
+        disabled={!isManual}
+        onChange={(v) => onUpdate({ top_p: v })}
+      />
+      <SamplingThinkingField
+        value={thinking}
+        disabled={!isManual}
+        onChange={(v) => onUpdate({ thinking: v })}
+      />
+    </>
+  );
+}
+
+function SamplingSlider({
+  label,
+  value,
+  range,
+  disabled,
+  onChange
+}: {
+  label: string;
+  value: number;
+  range: { min: number; max: number; step: number };
+  disabled: boolean;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        <Text size="xs" variant="secondary">
+          {value.toFixed(2)}
+        </Text>
+      </div>
+      <input
+        type="range"
+        min={range.min}
+        max={range.max}
+        step={range.step}
+        value={value}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-kumo-brand disabled:opacity-40"
+      />
+    </section>
+  );
+}
+
+function SamplingThinkingField({
+  value,
+  disabled,
+  onChange
+}: {
+  value: ThinkingLevel | undefined;
+  disabled: boolean;
+  onChange: (v: ThinkingLevel | undefined) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label>Thinking</Label>
+        <Text size="xs" variant="secondary">
+          {value ?? "default"}
+        </Text>
+      </div>
+      <Segmented
+        options={THINKING_LEVELS}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    </section>
+  );
+}
+
+function PresetField({
+  value,
+  onChange
+}: {
+  value: Preset;
+  onChange: (v: Preset) => void;
+}) {
+  const detail =
+    value === "manual"
+      ? "custom"
+      : `temp ${PRESET_VALUES[value].temperature}, top_p ${PRESET_VALUES[value].top_p}`;
+  return (
+    <section className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label>Preset</Label>
+        <Text size="xs" variant="secondary">
+          {detail}
+        </Text>
+      </div>
+      <Segmented options={PRESETS} value={value} onChange={onChange} />
+    </section>
   );
 }
 
@@ -267,31 +382,6 @@ function StopField({
   );
 }
 
-function ThinkingField({
-  value,
-  onChange
-}: {
-  value: ThinkingLevel | undefined;
-  onChange: (v: ThinkingLevel | undefined) => void;
-}) {
-  const enabled = value !== undefined;
-  return (
-    <ToggleRow
-      label="Thinking"
-      enabled={enabled}
-      onToggle={(on) => onChange(on ? "medium" : undefined)}
-      detail={enabled ? value : "default"}
-    >
-      <Segmented
-        options={THINKING_LEVELS}
-        value={value ?? "medium"}
-        disabled={!enabled}
-        onChange={onChange}
-      />
-    </ToggleRow>
-  );
-}
-
 function ToggleRow({
   label,
   enabled,
@@ -335,7 +425,7 @@ function Segmented<T extends string>({
   onChange
 }: {
   options: readonly T[];
-  value: T;
+  value: T | undefined;
   disabled?: boolean;
   onChange: (v: T) => void;
 }) {
