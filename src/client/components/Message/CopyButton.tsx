@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { Button } from "@cloudflare/kumo";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="xs"
+      icon={copied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
@@ -16,17 +19,9 @@ export function CopyButton({ text }: { text: string }) {
         }
       }}
       aria-label="Copy message"
-      className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-kumo-subtle hover:text-kumo-default opacity-0 group-hover:opacity-100 transition-opacity"
+      className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
     >
-      {copied ? (
-        <>
-          <CheckIcon size={12} /> Copied
-        </>
-      ) : (
-        <>
-          <CopyIcon size={12} /> Copy
-        </>
-      )}
-    </button>
+      {copied ? "Copied" : "Copy"}
+    </Button>
   );
 }

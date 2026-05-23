@@ -1,4 +1,4 @@
-import { Text } from "@cloudflare/kumo";
+import { Button, Text } from "@cloudflare/kumo";
 import {
   ChatCircleDotsIcon,
   PencilSimpleLineIcon,
@@ -42,25 +42,26 @@ export function Sidebar({
         } md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col transition-transform`}
       >
         <div className="px-3 py-3 border-b border-kumo-line flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            icon={<PencilSimpleLineIcon size={14} />}
             onClick={() => {
               onNewChat();
               onCloseDrawer();
             }}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors"
+            className="flex-1"
           >
-            <PencilSimpleLineIcon size={14} />
             New chat
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            shape="square"
+            size="sm"
             aria-label="Close sidebar"
+            icon={<XIcon size={16} />}
             onClick={onCloseDrawer}
-            className="md:hidden p-1 rounded text-kumo-inactive hover:text-kumo-default"
-          >
-            <XIcon size={16} />
-          </button>
+            className="md:hidden"
+          />
         </div>
         <ul className="flex-1 overflow-y-auto p-2 space-y-1">
           {entries.length === 0 && (
@@ -129,16 +130,17 @@ function SidebarRow({
           </div>
         </div>
       </button>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        shape="square"
+        size="xs"
         aria-label="Delete conversation"
+        icon={<TrashIcon size={12} />}
         onClick={() => {
           if (confirm(`Delete "${title}"?`)) onDelete();
         }}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded text-kumo-inactive hover:text-kumo-danger transition-opacity"
-      >
-        <TrashIcon size={12} />
-      </button>
+        className="opacity-0 group-hover:opacity-100 text-kumo-inactive hover:text-kumo-danger transition-opacity"
+      />
     </li>
   );
 }

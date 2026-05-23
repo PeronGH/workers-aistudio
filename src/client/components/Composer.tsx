@@ -67,14 +67,15 @@ export function Composer({
                 alt={att.file.name}
                 className="h-16 w-16 object-cover"
               />
-              <button
-                type="button"
-                onClick={() => onRemoveAttachment(att.id)}
-                className="absolute top-0.5 right-0.5 rounded-full bg-kumo-contrast/80 text-kumo-inverse p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              <Button
+                variant="secondary"
+                shape="circle"
+                size="xs"
                 aria-label={`Remove ${att.file.name}`}
-              >
-                <XIcon size={10} />
-              </button>
+                icon={<XIcon size={10} />}
+                onClick={() => onRemoveAttachment(att.id)}
+                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              />
             </div>
           ))}
         </div>

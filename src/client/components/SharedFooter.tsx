@@ -1,3 +1,4 @@
+import { Button } from "@cloudflare/kumo";
 import { CopyIcon } from "@phosphor-icons/react";
 
 interface SharedFooterProps {
@@ -11,15 +12,14 @@ export function SharedFooter({ canClone, onClone }: SharedFooterProps) {
       <span className="text-sm text-kumo-subtle">
         Read-only shared conversation.
       </span>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        icon={<CopyIcon size={14} />}
         onClick={onClone}
         disabled={!canClone}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-kumo-line bg-kumo-base text-kumo-default hover:bg-kumo-control transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <CopyIcon size={14} />
         Clone to continue
-      </button>
+      </Button>
     </div>
   );
 }

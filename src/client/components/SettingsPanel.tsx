@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Button, Input, Surface, Switch, Text } from "@cloudflare/kumo";
+import {
+  Button,
+  Input,
+  InputArea,
+  Surface,
+  Switch,
+  Text
+} from "@cloudflare/kumo";
 import { Collapsible } from "@cloudflare/kumo/components/collapsible";
 import { CaretDownIcon, CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import {
@@ -107,13 +114,13 @@ function SystemPromptField({
   return (
     <section className="space-y-1.5">
       <Label>System instructions</Label>
-      <textarea
+      <InputArea
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
+        onValueChange={(v) => onChange(v || undefined)}
         aria-label="System instructions"
         placeholder="Empty system prompt."
         rows={5}
-        className="w-full px-3 py-2 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent resize-y"
+        className="w-full resize-y"
       />
     </section>
   );
@@ -228,21 +235,22 @@ function StopField({
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-kumo-control text-xs font-mono text-kumo-default"
           >
             {s}
-            <button
-              type="button"
-              onClick={() => remove(s)}
+            <Button
+              variant="ghost"
+              shape="square"
+              size="xs"
               aria-label={`Remove ${s}`}
+              icon={<XIcon size={10} />}
+              onClick={() => remove(s)}
               className="text-kumo-subtle hover:text-kumo-default"
-            >
-              <XIcon size={10} />
-            </button>
+            />
           </span>
         ))}
       </div>
-      <input
+      <Input
         type="text"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onValueChange={setDraft}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -253,7 +261,7 @@ function StopField({
         aria-label="Add stop sequence"
         placeholder={items.length >= STOP_MAX ? "Max 4" : "Press Enter to add"}
         disabled={items.length >= STOP_MAX}
-        className="w-full px-2.5 py-1.5 text-sm font-mono rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent disabled:opacity-40"
+        className="w-full font-mono"
       />
     </section>
   );

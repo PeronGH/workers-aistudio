@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Button } from "@cloudflare/kumo";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import type { UiUserMessage } from "../../../shared/messages";
-import { ActionChip } from "./ActionChip";
 import { CopyButton } from "./CopyButton";
 import { UserEditor } from "./UserEditor";
 
@@ -53,11 +53,15 @@ export function UserBubble({
         <div className="flex justify-end gap-1">
           {message.text && <CopyButton text={message.text} />}
           {!readOnly && (
-            <ActionChip
-              label="Edit"
+            <Button
+              variant="ghost"
+              size="xs"
               icon={<PencilSimpleIcon size={12} />}
               onClick={() => setEditing(true)}
-            />
+              className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              Edit
+            </Button>
           )}
         </div>
       )}

@@ -1,12 +1,12 @@
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
+import { Button } from "@cloudflare/kumo";
 import {
   ArrowClockwiseIcon,
   BrainIcon,
   CaretDownIcon
 } from "@phosphor-icons/react";
 import type { UiAssistantMessage } from "../../../shared/messages";
-import { ActionChip } from "./ActionChip";
 import { CopyButton } from "./CopyButton";
 
 interface AssistantBubbleProps {
@@ -64,11 +64,15 @@ export function AssistantBubble({
         <div className="flex justify-start gap-1">
           <CopyButton text={message.content} />
           {!readOnly && (
-            <ActionChip
-              label="Retry"
+            <Button
+              variant="ghost"
+              size="xs"
               icon={<ArrowClockwiseIcon size={12} />}
               onClick={() => onRetry(nodeId)}
-            />
+              className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              Retry
+            </Button>
           )}
         </div>
       )}
