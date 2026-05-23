@@ -18,7 +18,7 @@ export function UserEditor({ initial, onSave, onCancel }: UserEditorProps) {
           onValueChange={setDraft}
           aria-label="Edit message"
           rows={3}
-          className="w-full resize-y"
+          className="w-full font-mono resize-y"
         />
         <div className="flex justify-end gap-2 mt-1.5">
           <Button variant="secondary" size="sm" onClick={onCancel}>

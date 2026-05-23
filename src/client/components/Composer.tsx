@@ -115,7 +115,7 @@ export function Composer({
           }
           disabled={isStreaming}
           rows={1}
-          className="flex-1 ring-0! focus:ring-0! shadow-none! bg-transparent! outline-none! resize-none max-h-40"
+          className="flex-1 font-mono ring-0! focus:ring-0! shadow-none! bg-transparent! outline-none! resize-none max-h-40"
         />
         {isStreaming ? (
           <Button

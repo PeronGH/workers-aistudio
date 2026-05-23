@@ -120,7 +120,7 @@ function SystemPromptField({
         aria-label="System instructions"
         placeholder="Empty system prompt."
         rows={5}
-        className="w-full resize-y"
+        className="w-full font-mono resize-y"
       />
     </section>
   );
