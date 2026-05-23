@@ -202,18 +202,9 @@ function PresetField({
   value: Preset;
   onChange: (v: Preset) => void;
 }) {
-  const detail =
-    value === "manual"
-      ? "custom"
-      : `temp ${PRESET_VALUES[value].temperature}, top_p ${PRESET_VALUES[value].top_p}`;
   return (
     <section className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <Label>Preset</Label>
-        <Text size="xs" variant="secondary">
-          {detail}
-        </Text>
-      </div>
+      <Label>Preset</Label>
       <Segmented options={PRESETS} value={value} onChange={onChange} />
     </section>
   );
