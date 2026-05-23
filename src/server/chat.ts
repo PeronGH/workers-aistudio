@@ -10,7 +10,7 @@ import {
 } from "../shared/settings";
 
 const MODEL = "@cf/moonshotai/kimi-k2.6";
-const MAX_COMPLETION_TOKENS = 65536;
+const MAX_COMPLETION_TOKENS = 98304;
 
 export const ChatRequestSchema = z.object({
   messages: z.array(ChatMessageSchema).min(1),
