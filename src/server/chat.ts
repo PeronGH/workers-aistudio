@@ -10,6 +10,7 @@ import {
 } from "../shared/settings";
 
 const MODEL = "@cf/moonshotai/kimi-k2.6";
+const MAX_COMPLETION_TOKENS = 65536;
 
 export const ChatRequestSchema = z.object({
   messages: z.array(ChatMessageSchema).min(1),
@@ -43,24 +44,13 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   const resolved = resolveSampling(settings);
   const out: Record<string, unknown> = {
     messages: withSystemPrompt(messages, settings.systemPrompt),
-    stream: true
+    stream: true,
+    max_completion_tokens: MAX_COMPLETION_TOKENS
   };
 
   if (resolved.temperature !== undefined)
     out.temperature = resolved.temperature;
   if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
-  if (settings.max_completion_tokens !== undefined) {
-    out.max_completion_tokens = settings.max_completion_tokens;
-  }
-  if (settings.stop && settings.stop.length > 0) out.stop = settings.stop;
-  if (settings.frequency_penalty !== undefined) {
-    out.frequency_penalty = settings.frequency_penalty;
-  }
-  if (settings.presence_penalty !== undefined) {
-    out.presence_penalty = settings.presence_penalty;
-  }
-  if (settings.seed !== undefined) out.seed = settings.seed;
-
   if (resolved.thinking === false) {
     out.chat_template_kwargs = { thinking: false };
   }
