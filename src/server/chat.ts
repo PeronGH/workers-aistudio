@@ -19,7 +19,10 @@ export const chatRoutes = new Hono<{ Bindings: Env }>().post(
     const upstream = await c.env.AI.run(
       MODEL,
       buildPayload(messages, settings),
-      { returnRawResponse: true }
+      {
+        returnRawResponse: true,
+        extraHeaders: { "x-session-affinity": "wai-studio" }
+      }
     );
     return new Response(upstream.body as ReadableStream, {
       status: upstream.status as number,
