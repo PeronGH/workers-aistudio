@@ -1,4 +1,5 @@
 import { Button, InputArea, Switch, Text } from "@cloudflare/kumo";
+import { XIcon } from "@phosphor-icons/react";
 import {
   DEFAULT_PRESET,
   PRESETS,
@@ -11,35 +12,64 @@ import {
 
 interface SettingsPanelProps {
   settings: RunSettings;
+  drawerOpen: boolean;
+  onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
   onReset: () => void;
 }
 
 export function SettingsPanel({
   settings,
+  drawerOpen,
+  onCloseDrawer,
   onUpdate,
   onReset
 }: SettingsPanelProps) {
   return (
-    <aside className="w-[340px] shrink-0 border-l border-kumo-line bg-kumo-base overflow-y-auto">
-      <div className="p-4 space-y-5">
-        <div className="flex items-center justify-between">
-          <Text size="sm" bold>
-            Run settings
-          </Text>
-          <Button variant="ghost" size="sm" onClick={onReset}>
-            Clear all
-          </Button>
-        </div>
-
-        <SystemPromptField
-          value={settings.systemPrompt}
-          onChange={(v) => onUpdate({ systemPrompt: v })}
+    <>
+      {drawerOpen && (
+        <button
+          type="button"
+          aria-label="Close settings"
+          onClick={onCloseDrawer}
+          className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
         />
+      )}
+      <aside
+        className={`${
+          drawerOpen ? "translate-x-0" : "translate-x-full"
+        } md:translate-x-0 fixed md:static inset-y-0 right-0 z-40 w-[340px] shrink-0 border-l border-kumo-line bg-kumo-base overflow-y-auto transition-transform`}
+      >
+        <div className="p-4 space-y-5">
+          <div className="flex items-center justify-between">
+            <Text size="sm" bold>
+              Run settings
+            </Text>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={onReset}>
+                Clear all
+              </Button>
+              <Button
+                variant="ghost"
+                shape="square"
+                size="sm"
+                aria-label="Close settings"
+                icon={<XIcon size={16} />}
+                onClick={onCloseDrawer}
+                className="md:hidden"
+              />
+            </div>
+          </div>
 
-        <SamplingFields settings={settings} onUpdate={onUpdate} />
-      </div>
-    </aside>
+          <SystemPromptField
+            value={settings.systemPrompt}
+            onChange={(v) => onUpdate({ systemPrompt: v })}
+          />
+
+          <SamplingFields settings={settings} onUpdate={onUpdate} />
+        </div>
+      </aside>
+    </>
   );
 }
 

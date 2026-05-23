@@ -1,5 +1,10 @@
 import { Button, Switch, Text } from "@cloudflare/kumo";
-import { BugIcon, CircleIcon, ListIcon } from "@phosphor-icons/react";
+import {
+  BugIcon,
+  CircleIcon,
+  ListIcon,
+  SlidersIcon
+} from "@phosphor-icons/react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -7,13 +12,15 @@ interface HeaderProps {
   showDebug: boolean;
   onToggleDebug: (next: boolean) => void;
   onOpenSidebar: () => void;
+  onOpenSettings: () => void;
 }
 
 export function Header({
   isStreaming,
   showDebug,
   onToggleDebug,
-  onOpenSidebar
+  onOpenSidebar,
+  onOpenSettings
 }: HeaderProps) {
   return (
     <header className="px-5 py-4 bg-kumo-base border-b border-kumo-line">
@@ -50,6 +57,14 @@ export function Header({
             />
           </div>
           <ThemeToggle />
+          <Button
+            variant="ghost"
+            shape="square"
+            aria-label="Open settings"
+            icon={<SlidersIcon size={16} />}
+            onClick={onOpenSettings}
+            className="md:hidden"
+          />
         </div>
       </div>
     </header>

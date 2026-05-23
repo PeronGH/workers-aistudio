@@ -20,6 +20,7 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeUuid, navigate] = useActiveUuid();
   const conversations = useConversations();
   const { settings, update, reset, replace } = useRunSettings();
@@ -155,54 +156,55 @@ export function Chat() {
           showDebug={showDebug}
           onToggleDebug={setShowDebug}
           onOpenSidebar={() => setDrawerOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
-        <div className="flex flex-1 min-h-0">
-          <div className="flex-1 flex flex-col min-w-0">
-            <MessageList
-              path={path}
-              isStreaming={isStreaming}
-              showDebug={showDebug}
-              isDragging={att.isDragging}
-              readOnly={isShared}
-              onRetry={handleRetry}
-              onEdit={handleEdit}
-              onSelectSibling={handleSelectSibling}
-            />
-            {isLoading && (
-              <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-subtle">
-                Loading conversation…
-              </div>
-            )}
-            {error && (
-              <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-danger">
-                {error}
-              </div>
-            )}
-            <div className="border-t border-kumo-line bg-kumo-base">
-              {isShared ? (
-                <SharedFooter canClone={messages.length > 0} onClone={clone} />
-              ) : (
-                <Composer
-                  input={input}
-                  onInputChange={setInput}
-                  attachments={att.attachments}
-                  onAddFiles={att.add}
-                  onRemoveAttachment={att.remove}
-                  onPaste={att.onPaste}
-                  onSubmit={submit}
-                  onStop={stop}
-                  isStreaming={isStreaming}
-                />
-              )}
-            </div>
-          </div>
-          <SettingsPanel
-            settings={settings}
-            onUpdate={update}
-            onReset={reset}
+        <div className="flex-1 flex flex-col min-h-0">
+          <MessageList
+            path={path}
+            isStreaming={isStreaming}
+            showDebug={showDebug}
+            isDragging={att.isDragging}
+            readOnly={isShared}
+            onRetry={handleRetry}
+            onEdit={handleEdit}
+            onSelectSibling={handleSelectSibling}
           />
+          {isLoading && (
+            <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-subtle">
+              Loading conversation…
+            </div>
+          )}
+          {error && (
+            <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-danger">
+              {error}
+            </div>
+          )}
+          <div className="border-t border-kumo-line bg-kumo-base">
+            {isShared ? (
+              <SharedFooter canClone={messages.length > 0} onClone={clone} />
+            ) : (
+              <Composer
+                input={input}
+                onInputChange={setInput}
+                attachments={att.attachments}
+                onAddFiles={att.add}
+                onRemoveAttachment={att.remove}
+                onPaste={att.onPaste}
+                onSubmit={submit}
+                onStop={stop}
+                isStreaming={isStreaming}
+              />
+            )}
+          </div>
         </div>
       </div>
+      <SettingsPanel
+        settings={settings}
+        drawerOpen={settingsOpen}
+        onCloseDrawer={() => setSettingsOpen(false)}
+        onUpdate={update}
+        onReset={reset}
+      />
     </div>
   );
 }
