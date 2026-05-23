@@ -1,10 +1,5 @@
-import { Badge, Button, Switch, Text } from "@cloudflare/kumo";
-import {
-  BugIcon,
-  ChatCircleDotsIcon,
-  CircleIcon,
-  ListIcon
-} from "@phosphor-icons/react";
+import { Button, Switch, Text } from "@cloudflare/kumo";
+import { BugIcon, CircleIcon, ListIcon } from "@phosphor-icons/react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -33,12 +28,8 @@ export function Header({
             className="md:hidden"
           />
           <h1 className="text-lg font-semibold text-kumo-default">
-            <span className="mr-2">⛅</span>Workers AI Studio
+            AI Studio
           </h1>
-          <Badge variant="secondary">
-            <ChatCircleDotsIcon size={12} weight="bold" className="mr-1" />
-            Playground
-          </Badge>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
