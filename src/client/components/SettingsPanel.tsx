@@ -1,4 +1,5 @@
 import { Button, InputArea, Select, Switch, Text } from "@cloudflare/kumo";
+import { Slider } from "@cloudflare/kumo/primitives/slider";
 import { XIcon } from "@phosphor-icons/react";
 import {
   DEFAULT_PRESET,
@@ -146,25 +147,34 @@ function SamplingSlider({
   onChange: (v: number) => void;
 }) {
   return (
-    <section className="space-y-1.5">
+    <Slider.Root
+      value={value}
+      min={range.min}
+      max={range.max}
+      step={range.step}
+      disabled={disabled}
+      format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+      onValueChange={onChange}
+      className={`space-y-1.5 ${disabled ? "opacity-40" : ""}`}
+    >
       <div className="flex items-center justify-between">
-        <Label>{label}</Label>
-        <Text size="xs" variant="secondary">
-          {value.toFixed(2)}
-        </Text>
+        <Slider.Label className="text-xs font-semibold text-kumo-subtle">
+          {label}
+        </Slider.Label>
+        <Slider.Value className="text-xs text-kumo-subtle tabular-nums">
+          {([formatted]) => formatted}
+        </Slider.Value>
       </div>
-      <input
-        type="range"
-        min={range.min}
-        max={range.max}
-        step={range.step}
-        value={value}
-        disabled={disabled}
-        aria-label={label}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-kumo-brand disabled:opacity-40"
-      />
-    </section>
+      <Slider.Control className="relative flex h-5 w-full items-center py-2">
+        <Slider.Track className="h-1.5 w-full rounded-full bg-kumo-control">
+          <Slider.Indicator className="rounded-full bg-kumo-brand" />
+          <Slider.Thumb
+            className="h-3.5 w-3.5 rounded-full border border-kumo-line bg-kumo-base shadow-sm outline-none ring-0 transition-shadow focus-visible:ring-2 focus-visible:ring-kumo-focus/50"
+            getAriaLabel={() => label}
+          />
+        </Slider.Track>
+      </Slider.Control>
+    </Slider.Root>
   );
 }
 
