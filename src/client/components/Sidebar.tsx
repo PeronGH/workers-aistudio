@@ -29,11 +29,11 @@ export function Sidebar({
   return (
     <>
       {drawerOpen && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           aria-label="Close sidebar"
           onClick={onCloseDrawer}
-          className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-30 h-auto w-auto rounded-none bg-black/40 p-0 shadow-none backdrop-blur-sm hover:bg-black/40 focus-visible:ring-0"
         />
       )}
       <aside
@@ -110,10 +110,11 @@ function SidebarRow({
           : "border-transparent hover:bg-kumo-control/50"
       }`}
     >
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="xs"
         onClick={onSelect}
-        className="flex-1 min-w-0 flex items-center gap-2 pl-2 pr-1 py-1.5 text-left"
+        className="h-auto flex-1 min-w-0 justify-start gap-2 rounded-none bg-transparent pl-2 pr-1 py-1.5 text-left shadow-none hover:bg-transparent"
       >
         <ChatCircleDotsIcon
           size={14}
@@ -129,7 +130,7 @@ function SidebarRow({
             {formatRelative(entry.updatedAt)}
           </div>
         </div>
-      </button>
+      </Button>
       <Button
         variant="ghost"
         shape="square"

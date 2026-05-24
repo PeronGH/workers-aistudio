@@ -1,5 +1,7 @@
 import { Button, InputArea, Select, Switch, Text } from "@cloudflare/kumo";
 import { Slider } from "@cloudflare/kumo/primitives/slider";
+import { Toggle } from "@cloudflare/kumo/primitives/toggle";
+import { ToggleGroup } from "@cloudflare/kumo/primitives/toggle-group";
 import { XIcon } from "@phosphor-icons/react";
 import {
   DEFAULT_PRESET,
@@ -35,11 +37,11 @@ export function SettingsPanel({
   return (
     <>
       {drawerOpen && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           aria-label="Close settings"
           onClick={onCloseDrawer}
-          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 h-auto w-auto rounded-none bg-black/40 p-0 shadow-none backdrop-blur-sm hover:bg-black/40 focus-visible:ring-0"
         />
       )}
       <aside
@@ -251,13 +253,20 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex w-full rounded-lg border border-kumo-line overflow-hidden">
+    <ToggleGroup
+      value={value ? [value] : []}
+      disabled={disabled}
+      onValueChange={(next) => {
+        const selected = next[0];
+        if (selected) onChange(selected as T);
+      }}
+      className="inline-flex w-full rounded-lg border border-kumo-line overflow-hidden"
+    >
       {options.map((opt) => (
-        <button
+        <Toggle
           key={opt}
-          type="button"
+          value={opt}
           disabled={disabled}
-          onClick={() => onChange(opt)}
           className={`flex-1 px-2 py-1 text-xs font-medium transition-colors ${
             value === opt
               ? "bg-kumo-contrast text-kumo-inverse"
@@ -265,9 +274,9 @@ function Segmented<T extends string>({
           } disabled:cursor-not-allowed`}
         >
           {opt}
-        </button>
+        </Toggle>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
