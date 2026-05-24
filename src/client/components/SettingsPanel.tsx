@@ -38,13 +38,13 @@ export function SettingsPanel({
           type="button"
           aria-label="Close settings"
           onClick={onCloseDrawer}
-          className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm"
         />
       )}
       <aside
         className={`${
           drawerOpen ? "translate-x-0" : "translate-x-full"
-        } md:translate-x-0 fixed md:static inset-y-0 right-0 z-40 w-[340px] shrink-0 border-l border-kumo-line bg-kumo-base overflow-y-auto transition-transform`}
+        } md:translate-x-0 fixed md:static inset-y-0 right-0 w-[340px] shrink-0 border-l border-kumo-line bg-kumo-base overflow-y-auto transition-transform`}
       >
         <div className="p-4 space-y-6">
           <div className="flex md:hidden items-center justify-end">
