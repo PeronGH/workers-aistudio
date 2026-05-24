@@ -122,7 +122,7 @@ function SidebarRow({
         />
         <div className="flex-1 min-w-0">
           <div
-            className={`truncate text-sm ${active ? "font-medium text-kumo-default" : "text-kumo-default"}`}
+            className={`truncate text-sm text-kumo-default/80 ${active ? "font-medium" : ""}`}
           >
             {title}
           </div>
