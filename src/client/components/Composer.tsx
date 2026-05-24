@@ -1,12 +1,14 @@
 import { useRef } from "react";
-import { Button, InputArea } from "@cloudflare/kumo";
+import { Button, InputArea, Loader } from "@cloudflare/kumo";
 import {
+  MicrophoneIcon,
   PaperclipIcon,
   PaperPlaneRightIcon,
   StopIcon,
   XIcon
 } from "@phosphor-icons/react";
 import type { Attachment } from "../utils/attachments";
+import { useVoiceInput } from "../hooks/useVoiceInput";
 
 interface ComposerProps {
   input: string;
@@ -18,6 +20,7 @@ interface ComposerProps {
   onSubmit: () => void;
   onStop: () => void;
   isStreaming: boolean;
+  transcriptionLanguage: string | undefined;
 }
 
 export function Composer({
@@ -29,10 +32,20 @@ export function Composer({
   onPaste,
   onSubmit,
   onStop,
-  isStreaming
+  isStreaming,
+  transcriptionLanguage
 }: ComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef(input);
+  inputRef.current = input;
+  const voice = useVoiceInput({
+    language: transcriptionLanguage,
+    onTranscribed: (text) => {
+      const current = inputRef.current;
+      onInputChange(current ? `${current} ${text}` : text);
+    }
+  });
 
   return (
     <form
@@ -54,6 +67,10 @@ export function Composer({
           e.target.value = "";
         }}
       />
+
+      {voice.error && (
+        <div className="text-xs text-kumo-danger mb-2">{voice.error}</div>
+      )}
 
       {attachments.length > 0 && (
         <div className="flex gap-2 mb-2 flex-wrap">
@@ -90,6 +107,24 @@ export function Composer({
           icon={<PaperclipIcon size={18} />}
           onClick={() => fileInputRef.current?.click()}
           disabled={isStreaming}
+          className="mb-0.5"
+        />
+        <Button
+          type="button"
+          variant={voice.isRecording ? "primary" : "ghost"}
+          shape="square"
+          aria-label={voice.isRecording ? "Stop recording" : "Record voice"}
+          icon={
+            voice.isTranscribing ? (
+              <Loader size="sm" />
+            ) : voice.isRecording ? (
+              <StopIcon size={18} />
+            ) : (
+              <MicrophoneIcon size={18} />
+            )
+          }
+          onClick={() => (voice.isRecording ? voice.stop() : voice.start())}
+          disabled={voice.isTranscribing || (isStreaming && !voice.isRecording)}
           className="mb-0.5"
         />
         <InputArea

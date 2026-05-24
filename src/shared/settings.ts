@@ -24,6 +24,23 @@ export const RunSettingsSchema = z
 export type RunSettings = z.infer<typeof RunSettingsSchema>;
 export type Preset = (typeof PRESETS)[number];
 
+export const TRANSCRIPTION_LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" }
+] as const;
+
+export const LocalSettingsSchema = z
+  .object({
+    transcriptionLanguage: z.enum(
+      TRANSCRIPTION_LANGUAGES.map((l) => l.code) as [string, ...string[]]
+    )
+  })
+  .partial();
+
+export type LocalSettings = z.infer<typeof LocalSettingsSchema>;
+
 export const PRESET_VALUES: Record<
   Exclude<Preset, "manual">,
   { temperature: number; top_p: number; thinking?: boolean }

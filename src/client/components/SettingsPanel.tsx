@@ -1,4 +1,4 @@
-import { Button, InputArea, Switch, Text } from "@cloudflare/kumo";
+import { Button, InputArea, Select, Switch, Text } from "@cloudflare/kumo";
 import { XIcon } from "@phosphor-icons/react";
 import {
   DEFAULT_PRESET,
@@ -6,23 +6,29 @@ import {
   PRESET_VALUES,
   TEMPERATURE_RANGE,
   TOP_P_RANGE,
+  TRANSCRIPTION_LANGUAGES,
+  type LocalSettings,
   type Preset,
   type RunSettings
 } from "../../shared/settings";
 
 interface SettingsPanelProps {
   settings: RunSettings;
+  localSettings: LocalSettings;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
+  onUpdateLocal: (patch: Partial<LocalSettings>) => void;
   onReset: () => void;
 }
 
 export function SettingsPanel({
   settings,
+  localSettings,
   drawerOpen,
   onCloseDrawer,
   onUpdate,
+  onUpdateLocal,
   onReset
 }: SettingsPanelProps) {
   return (
@@ -40,33 +46,45 @@ export function SettingsPanel({
           drawerOpen ? "translate-x-0" : "translate-x-full"
         } md:translate-x-0 fixed md:static inset-y-0 right-0 z-40 w-[340px] shrink-0 border-l border-kumo-line bg-kumo-base overflow-y-auto transition-transform`}
       >
-        <div className="p-4 space-y-5">
-          <div className="flex items-center justify-between">
+        <div className="p-4 space-y-6">
+          <div className="flex md:hidden items-center justify-end">
+            <Button
+              variant="ghost"
+              shape="square"
+              size="sm"
+              aria-label="Close settings"
+              icon={<XIcon size={16} />}
+              onClick={onCloseDrawer}
+            />
+          </div>
+
+          <section className="space-y-4">
             <Text size="sm" bold>
-              Run settings
+              General
             </Text>
-            <div className="flex items-center gap-1">
+            <TranscriptionLanguageField
+              value={localSettings.transcriptionLanguage}
+              onChange={(v) => onUpdateLocal({ transcriptionLanguage: v })}
+            />
+          </section>
+
+          <section className="space-y-5">
+            <div className="flex items-center justify-between">
+              <Text size="sm" bold>
+                Run settings
+              </Text>
               <Button variant="ghost" size="sm" onClick={onReset}>
                 Clear all
               </Button>
-              <Button
-                variant="ghost"
-                shape="square"
-                size="sm"
-                aria-label="Close settings"
-                icon={<XIcon size={16} />}
-                onClick={onCloseDrawer}
-                className="md:hidden"
-              />
             </div>
-          </div>
 
-          <SystemPromptField
-            value={settings.systemPrompt}
-            onChange={(v) => onUpdate({ systemPrompt: v })}
-          />
+            <SystemPromptField
+              value={settings.systemPrompt}
+              onChange={(v) => onUpdate({ systemPrompt: v })}
+            />
 
-          <SamplingFields settings={settings} onUpdate={onUpdate} />
+            <SamplingFields settings={settings} onUpdate={onUpdate} />
+          </section>
         </div>
       </aside>
     </>
@@ -240,6 +258,36 @@ function Segmented<T extends string>({
         </button>
       ))}
     </div>
+  );
+}
+
+function TranscriptionLanguageField({
+  value,
+  onChange
+}: {
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <Label>Transcription language</Label>
+      <Select
+        size="sm"
+        aria-label="Transcription language"
+        value={value ?? "auto"}
+        onValueChange={(v) =>
+          onChange(typeof v === "string" && v !== "auto" ? v : undefined)
+        }
+        className="w-full"
+      >
+        <Select.Option value="auto">Auto</Select.Option>
+        {TRANSCRIPTION_LANGUAGES.map((l) => (
+          <Select.Option key={l.code} value={l.code}>
+            {l.name}
+          </Select.Option>
+        ))}
+      </Select>
+    </section>
   );
 }
 

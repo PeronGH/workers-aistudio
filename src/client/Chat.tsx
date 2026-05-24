@@ -3,6 +3,7 @@ import { useChat } from "./hooks/useChat";
 import { useConversations } from "./hooks/useConversations";
 import { useActiveUuid } from "./hooks/useActiveUuid";
 import { useRunSettings } from "./hooks/useRunSettings";
+import { useLocalSettings } from "./hooks/useLocalSettings";
 import { useAttachments } from "./hooks/useAttachments";
 import { uploadImage } from "./utils/attachments";
 import { api } from "./utils/api";
@@ -24,6 +25,7 @@ export function Chat() {
   const [activeUuid, navigate] = useActiveUuid();
   const conversations = useConversations();
   const { settings, update, reset, replace } = useRunSettings();
+  const { settings: localSettings, update: updateLocal } = useLocalSettings();
   const {
     state,
     path,
@@ -193,6 +195,7 @@ export function Chat() {
                 onSubmit={submit}
                 onStop={stop}
                 isStreaming={isStreaming}
+                transcriptionLanguage={localSettings.transcriptionLanguage}
               />
             )}
           </div>
@@ -200,9 +203,11 @@ export function Chat() {
       </div>
       <SettingsPanel
         settings={settings}
+        localSettings={localSettings}
         drawerOpen={settingsOpen}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={update}
+        onUpdateLocal={updateLocal}
         onReset={reset}
       />
     </div>
