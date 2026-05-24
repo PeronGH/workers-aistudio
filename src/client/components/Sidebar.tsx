@@ -114,7 +114,7 @@ function SidebarRow({
         variant="ghost"
         size="xs"
         onClick={onSelect}
-        className="h-auto flex-1 min-w-0 justify-start gap-2 rounded-none bg-transparent pl-2 pr-1 py-1.5 text-left shadow-none hover:bg-transparent"
+        className="h-auto flex-1 min-w-0 justify-start gap-2 rounded-none bg-transparent pl-2 pr-1 py-1.5 text-left font-normal shadow-none hover:bg-transparent"
       >
         <ChatCircleDotsIcon
           size={14}
@@ -122,7 +122,7 @@ function SidebarRow({
         />
         <div className="flex-1 min-w-0">
           <div
-            className={`truncate text-sm text-kumo-default/80 ${active ? "font-medium" : ""}`}
+            className={`truncate text-sm text-kumo-default/80 ${active ? "font-medium" : "font-normal"}`}
           >
             {title}
           </div>
