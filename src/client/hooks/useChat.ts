@@ -74,7 +74,6 @@ export function useChat(
     setIsStreaming(false);
 
     if (!persist) {
-      setState(emptyState());
       setIsLoading(false);
       return;
     }
@@ -127,6 +126,14 @@ export function useChat(
     setIsStreaming(false);
     setIsLoading(false);
     setState(emptyState(settings));
+  }, []);
+
+  const replaceChat = useCallback((next: ConversationState) => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsStreaming(false);
+    setIsLoading(false);
+    setState(cloneState(next));
   }, []);
 
   // ── Streaming primitive ───────────────────────────────────────────────
@@ -372,6 +379,7 @@ export function useChat(
     selectSibling,
     stop,
     resetChat,
+    replaceChat,
     claimLocal,
     isStreaming,
     isLoading

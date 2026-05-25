@@ -49,7 +49,7 @@ export function Header({
             </Text>
           </div>
           <Button
-            variant={anonymousMode ? "primary" : "ghost"}
+            variant="ghost"
             shape="square"
             aria-label={
               anonymousMode
@@ -67,7 +67,9 @@ export function Header({
             onClick={onToggleAnonymous}
             disabled={anonymousDisabled}
             className={
-              anonymousMode ? "" : "bg-kumo-control/60 hover:bg-kumo-control"
+              anonymousMode
+                ? "bg-kumo-contrast text-kumo-inverse hover:bg-kumo-contrast/90"
+                : "bg-kumo-control/60 hover:bg-kumo-control"
             }
           />
           <Button

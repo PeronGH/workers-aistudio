@@ -51,6 +51,7 @@ export function Chat() {
     selectSibling,
     stop,
     resetChat,
+    replaceChat,
     claimLocal,
     isStreaming,
     isLoading
@@ -86,9 +87,9 @@ export function Chat() {
     setAnonymousMode(true);
     setInput("");
     att.clear();
-    resetChat(savedSettings);
+    replaceChat({ ...state, settings: savedSettings });
     navigate(null);
-  }, [att, isStreaming, navigate, resetChat, savedSettings]);
+  }, [att, isStreaming, navigate, replaceChat, savedSettings, state]);
 
   const leaveAnonymousMode = useCallback(() => {
     if (!anonymousMode) return true;
@@ -277,7 +278,7 @@ export function Chat() {
         <Header
           isStreaming={isStreaming}
           anonymousMode={anonymousMode}
-          anonymousDisabled={isStreaming}
+          anonymousDisabled={isStreaming || isLoading}
           onToggleAnonymous={toggleAnonymousMode}
           onOpenSidebar={() => setDrawerOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
