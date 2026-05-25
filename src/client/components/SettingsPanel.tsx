@@ -21,7 +21,9 @@ interface SettingsPanelProps {
   localSettings: LocalSettings;
   drawerOpen: boolean;
   showDebug: boolean;
+  canForcePush: boolean;
   onToggleDebug: (next: boolean) => void;
+  onForcePush: () => void;
   onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
   onUpdateLocal: (patch: Partial<LocalSettings>) => void;
@@ -33,7 +35,9 @@ export function SettingsPanel({
   localSettings,
   drawerOpen,
   showDebug,
+  canForcePush,
   onToggleDebug,
+  onForcePush,
   onCloseDrawer,
   onUpdate,
   onUpdateLocal,
@@ -87,6 +91,17 @@ export function SettingsPanel({
               onCheckedChange={onToggleDebug}
               ariaLabel="Toggle debug mode"
             />
+            <section className="flex items-center justify-between">
+              <Label>Force push</Label>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!canForcePush}
+                onClick={onForcePush}
+              >
+                Push now
+              </Button>
+            </section>
           </section>
 
           <section className="space-y-5">

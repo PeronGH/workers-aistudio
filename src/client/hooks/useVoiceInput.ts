@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toastError } from "../utils/toast";
 
 interface UseVoiceInputOptions {
   language?: string;
@@ -11,7 +12,6 @@ export function useVoiceInput({
 }: UseVoiceInputOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -24,9 +24,8 @@ export function useVoiceInput({
   }, []);
 
   const start = useCallback(async () => {
-    setError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError("Microphone not available in this browser");
+      toastError("Microphone unavailable", "Not supported in this browser");
       return;
     }
     let stream: MediaStream | null = null;
@@ -73,7 +72,10 @@ export function useVoiceInput({
           const { text } = (await res.json()) as { text: string };
           if (text.trim()) onTranscribed(text.trim());
         } catch (e) {
-          setError(e instanceof Error ? e.message : "Transcription failed");
+          toastError(
+            "Transcription failed",
+            e instanceof Error ? e.message : undefined
+          );
         } finally {
           setIsTranscribing(false);
         }
@@ -83,7 +85,7 @@ export function useVoiceInput({
       setIsRecording(true);
     } catch (e) {
       cleanup();
-      setError(
+      toastError(
         e instanceof Error && e.name === "NotAllowedError"
           ? "Microphone permission denied"
           : "Could not start recording"
@@ -110,5 +112,5 @@ export function useVoiceInput({
     if (recorder && recorder.state !== "inactive") recorder.stop();
   }, []);
 
-  return { isRecording, isTranscribing, error, start, stop };
+  return { isRecording, isTranscribing, start, stop };
 }

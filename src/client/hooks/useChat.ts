@@ -19,6 +19,7 @@ import {
 import type { RunSettings } from "../../shared/settings";
 import { parseSseStream } from "../utils/sse";
 import { api } from "../utils/api";
+import { toastError } from "../utils/toast";
 
 interface ChatDelta {
   choices?: {
@@ -47,7 +48,6 @@ export function useChat(
   const [state, setState] = useState<ConversationState>(() => emptyState());
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stateRef = useRef<ConversationState>(state);
   const localUuidsRef = useRef<Set<string>>(new Set());
@@ -69,7 +69,6 @@ export function useChat(
     abortRef.current?.abort();
     abortRef.current = null;
     setIsStreaming(false);
-    setError(null);
 
     if (!activeUuid) {
       setState(emptyState());
@@ -95,7 +94,9 @@ export function useChat(
         setState(loaded);
         onLoadedRef.current?.(loaded);
       } catch (err) {
-        if (!cancelled) setError((err as Error).message);
+        if (!cancelled) {
+          toastError("Couldn't load conversation", (err as Error).message);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -121,7 +122,6 @@ export function useChat(
     ): Promise<boolean> => {
       const controller = new AbortController();
       abortRef.current = controller;
-      setError(null);
       setIsStreaming(true);
 
       let content = "";
@@ -179,7 +179,7 @@ export function useChat(
         }
       } catch (err) {
         if ((err as { name?: string }).name !== "AbortError") {
-          setError((err as Error).message);
+          toastError("Send failed", (err as Error).message);
         }
       } finally {
         abortRef.current = null;
@@ -356,8 +356,7 @@ export function useChat(
     stop,
     claimLocal,
     isStreaming,
-    isLoading,
-    error
+    isLoading
   };
 }
 

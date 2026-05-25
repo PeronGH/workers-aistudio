@@ -68,10 +68,6 @@ export function Composer({
         }}
       />
 
-      {voice.error && (
-        <div className="text-xs text-kumo-danger mb-2">{voice.error}</div>
-      )}
-
       {attachments.length > 0 && (
         <div className="flex gap-2 mb-2 flex-wrap">
           {attachments.map((att) => (

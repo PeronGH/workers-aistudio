@@ -14,6 +14,7 @@ import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SharedFooter } from "./components/SharedFooter";
+import { withToast } from "./utils/toast";
 
 const TITLE_MAX = 40;
 
@@ -37,8 +38,7 @@ export function Chat() {
     stop,
     claimLocal,
     isStreaming,
-    isLoading,
-    error
+    isLoading
   } = useChat(activeUuid, (loaded) => replace(loaded.settings));
   const att = useAttachments();
 
@@ -86,10 +86,17 @@ export function Chat() {
     const newUuid = crypto.randomUUID();
     conversations.add(newUuid, deriveTitle(messages));
     claimLocal(newUuid);
-    await api.api.conversations[":uuid"].$put({
-      param: { uuid: newUuid },
-      json: { ...state, settings }
-    });
+    await withToast(
+      api.api.conversations[":uuid"].$put({
+        param: { uuid: newUuid },
+        json: { ...state, settings }
+      }),
+      {
+        loading: "Cloning conversation…",
+        success: "Cloned.",
+        errorTitle: "Clone failed"
+      }
+    );
     navigate(newUuid);
   }, [
     isShared,
@@ -123,15 +130,33 @@ export function Chat() {
     [activeUuid, selectSibling]
   );
 
+  const forcePush = useCallback(() => {
+    if (!activeUuid || isShared) return;
+    void withToast(
+      api.api.conversations[":uuid"].$put({
+        param: { uuid: activeUuid },
+        json: { ...state, settings }
+      }),
+      {
+        loading: "Pushing conversation…",
+        success: "Pushed.",
+        errorTitle: "Push failed"
+      }
+    );
+  }, [activeUuid, isShared, state, settings]);
+
   const handleDelete = useCallback(
     async (uuid: string) => {
-      try {
-        await api.api.conversations[":uuid"].$delete({ param: { uuid } });
-      } catch {
-        /* ignore */
-      }
       conversations.remove(uuid);
       if (activeUuid === uuid) navigate(null);
+      await withToast(
+        api.api.conversations[":uuid"].$delete({ param: { uuid } }),
+        {
+          loading: "Deleting…",
+          success: "Deleted.",
+          errorTitle: "Delete failed"
+        }
+      );
     },
     [conversations, activeUuid, navigate]
   );
@@ -174,11 +199,6 @@ export function Chat() {
               Loading conversation…
             </div>
           )}
-          {error && (
-            <div className="max-w-4xl mx-auto w-full px-5 pb-2 text-xs text-kumo-danger">
-              {error}
-            </div>
-          )}
           <div className="border-t border-kumo-line bg-kumo-base">
             {isShared ? (
               <SharedFooter canClone={messages.length > 0} onClone={clone} />
@@ -204,7 +224,9 @@ export function Chat() {
         localSettings={localSettings}
         drawerOpen={settingsOpen}
         showDebug={showDebug}
+        canForcePush={activeUuid !== null && !isShared}
         onToggleDebug={setShowDebug}
+        onForcePush={forcePush}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={update}
         onUpdateLocal={updateLocal}
