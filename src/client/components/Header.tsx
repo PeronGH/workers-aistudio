@@ -1,14 +1,25 @@
 import { Button, Text } from "@cloudflare/kumo";
-import { CircleIcon, ListIcon, SlidersIcon } from "@phosphor-icons/react";
+import {
+  CircleIcon,
+  EyeSlashIcon,
+  ListIcon,
+  SlidersIcon
+} from "@phosphor-icons/react";
 
 interface HeaderProps {
   isStreaming: boolean;
+  anonymousMode: boolean;
+  anonymousDisabled: boolean;
+  onToggleAnonymous: () => void;
   onOpenSidebar: () => void;
   onOpenSettings: () => void;
 }
 
 export function Header({
   isStreaming,
+  anonymousMode,
+  anonymousDisabled,
+  onToggleAnonymous,
   onOpenSidebar,
   onOpenSettings
 }: HeaderProps) {
@@ -37,6 +48,28 @@ export function Header({
               {isStreaming ? "Streaming" : "Idle"}
             </Text>
           </div>
+          <Button
+            variant={anonymousMode ? "primary" : "ghost"}
+            shape="square"
+            aria-label={
+              anonymousMode
+                ? "Turn anonymous mode off"
+                : "Turn anonymous mode on"
+            }
+            aria-pressed={anonymousMode}
+            title={anonymousMode ? "Anonymous mode on" : "Anonymous mode off"}
+            icon={
+              <EyeSlashIcon
+                size={16}
+                weight={anonymousMode ? "fill" : "regular"}
+              />
+            }
+            onClick={onToggleAnonymous}
+            disabled={anonymousDisabled}
+            className={
+              anonymousMode ? "" : "bg-kumo-control/60 hover:bg-kumo-control"
+            }
+          />
           <Button
             variant="ghost"
             shape="square"

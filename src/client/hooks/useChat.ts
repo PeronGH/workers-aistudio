@@ -28,14 +28,14 @@ interface ChatDelta {
 }
 
 interface SendArgs {
-  uuid: string;
+  uuid: string | null;
   text: string;
   images: { url: string; mediaType: string }[];
   settings: RunSettings;
 }
 
 interface EditArgs {
-  uuid: string;
+  uuid: string | null;
   nodeId: string;
   text: string;
   settings: RunSettings;
@@ -43,7 +43,8 @@ interface EditArgs {
 
 export function useChat(
   activeUuid: string | null,
-  onLoaded?: (state: ConversationState) => void
+  onLoaded?: (state: ConversationState) => void,
+  persist = true
 ) {
   const [state, setState] = useState<ConversationState>(() => emptyState());
   const [isStreaming, setIsStreaming] = useState(false);
@@ -52,7 +53,9 @@ export function useChat(
   const stateRef = useRef<ConversationState>(state);
   const localUuidsRef = useRef<Set<string>>(new Set());
   const onLoadedRef = useRef(onLoaded);
+  const persistRef = useRef(persist);
   onLoadedRef.current = onLoaded;
+  persistRef.current = persist;
   stateRef.current = state;
 
   const claimLocal = useCallback((uuid: string) => {
@@ -69,6 +72,12 @@ export function useChat(
     abortRef.current?.abort();
     abortRef.current = null;
     setIsStreaming(false);
+
+    if (!persist) {
+      setState(emptyState());
+      setIsLoading(false);
+      return;
+    }
 
     if (!activeUuid) {
       setState(emptyState());
@@ -104,7 +113,7 @@ export function useChat(
     return () => {
       cancelled = true;
     };
-  }, [activeUuid]);
+  }, [activeUuid, persist]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -112,10 +121,18 @@ export function useChat(
     setIsStreaming(false);
   }, []);
 
+  const resetChat = useCallback((settings?: RunSettings) => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsStreaming(false);
+    setIsLoading(false);
+    setState(emptyState(settings));
+  }, []);
+
   // ── Streaming primitive ───────────────────────────────────────────────
   const stream = useCallback(
     async (
-      uuid: string,
+      uuid: string | null,
       apiMessageNodes: MessageNode[],
       assistantNodeId: string,
       settings: RunSettings
@@ -186,7 +203,7 @@ export function useChat(
         setIsStreaming(false);
       }
 
-      if (completedNaturally) {
+      if (completedNaturally && uuid && persistRef.current) {
         void putConversation(uuid, cloneState(stateRef.current));
       }
       return completedNaturally;
@@ -221,7 +238,7 @@ export function useChat(
       withUser.settings = settings;
       appendNode(withUser, leafId, userNode);
       setState(withUser);
-      void putConversation(uuid, withUser);
+      if (uuid && persistRef.current) void putConversation(uuid, withUser);
 
       const assistantId = newId();
       const assistantNode: MessageNode = {
@@ -247,7 +264,7 @@ export function useChat(
 
   const retry = useCallback(
     async (
-      uuid: string,
+      uuid: string | null,
       assistantNodeId: string,
       settings: RunSettings
     ): Promise<boolean> => {
@@ -305,7 +322,7 @@ export function useChat(
       withUser.settings = settings;
       appendNode(withUser, original.parentId, newUserNode);
       setState(withUser);
-      void putConversation(uuid, withUser);
+      if (uuid && persistRef.current) void putConversation(uuid, withUser);
 
       const assistantId = newId();
       const assistantNode: MessageNode = {
@@ -330,11 +347,11 @@ export function useChat(
   );
 
   const selectSibling = useCallback(
-    (uuid: string, parentId: string | null, childId: string) => {
+    (uuid: string | null, parentId: string | null, childId: string) => {
       const next = cloneState(stateRef.current);
       selectChildOf(next, parentId, childId);
       setState(next);
-      void putConversation(uuid, next);
+      if (uuid && persistRef.current) void putConversation(uuid, next);
     },
     []
   );
@@ -354,6 +371,7 @@ export function useChat(
     editUser,
     selectSibling,
     stop,
+    resetChat,
     claimLocal,
     isStreaming,
     isLoading

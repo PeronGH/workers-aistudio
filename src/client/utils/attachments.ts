@@ -27,3 +27,18 @@ export async function uploadImage(file: File): Promise<string> {
   const { url } = (await res.json()) as { url: string };
   return new URL(url, window.location.origin).toString();
 }
+
+export async function imageToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Image did not produce a data URL"));
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}

@@ -5,9 +5,14 @@ import { useActiveUuid } from "./hooks/useActiveUuid";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useLocalSettings } from "./hooks/useLocalSettings";
 import { useAttachments } from "./hooks/useAttachments";
-import { uploadImage } from "./utils/attachments";
+import {
+  imageToDataUrl,
+  uploadImage,
+  type Attachment
+} from "./utils/attachments";
 import { api } from "./utils/api";
 import type { UiMessage } from "../shared/messages";
+import type { RunSettings } from "../shared/settings";
 import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
@@ -23,9 +28,18 @@ export function Chat() {
   const [showDebug, setShowDebug] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [anonymousMode, setAnonymousMode] = useState(false);
+  const [anonymousSettings, setAnonymousSettings] = useState<RunSettings>({});
   const [activeUuid, navigate] = useActiveUuid();
+  const effectiveActiveUuid = anonymousMode ? null : activeUuid;
   const conversations = useConversations();
-  const { settings, update, reset, replace } = useRunSettings();
+  const {
+    settings: savedSettings,
+    update: updateSavedSettings,
+    reset: resetSavedSettings,
+    replace
+  } = useRunSettings();
+  const settings = anonymousMode ? anonymousSettings : savedSettings;
   const { settings: localSettings, update: updateLocal } = useLocalSettings();
   const {
     state,
@@ -36,25 +50,96 @@ export function Chat() {
     editUser,
     selectSibling,
     stop,
+    resetChat,
     claimLocal,
     isStreaming,
     isLoading
-  } = useChat(activeUuid, (loaded) => replace(loaded.settings));
+  } = useChat(
+    effectiveActiveUuid,
+    (loaded) => replace(loaded.settings),
+    !anonymousMode
+  );
   const att = useAttachments();
+
+  const updateSettings = useCallback(
+    (patch: Partial<RunSettings>) => {
+      if (!anonymousMode) {
+        updateSavedSettings(patch);
+        return;
+      }
+      setAnonymousSettings((prev) => cleanSettings({ ...prev, ...patch }));
+    },
+    [anonymousMode, updateSavedSettings]
+  );
+
+  const resetSettings = useCallback(() => {
+    if (!anonymousMode) {
+      resetSavedSettings();
+      return;
+    }
+    setAnonymousSettings({});
+  }, [anonymousMode, resetSavedSettings]);
+
+  const enterAnonymousMode = useCallback(() => {
+    if (isStreaming) return;
+    setAnonymousSettings({ ...savedSettings });
+    setAnonymousMode(true);
+    setInput("");
+    att.clear();
+    resetChat(savedSettings);
+    navigate(null);
+  }, [att, isStreaming, navigate, resetChat, savedSettings]);
+
+  const leaveAnonymousMode = useCallback(() => {
+    if (!anonymousMode) return true;
+    if (isStreaming) return false;
+    if (messages.length > 0 && !confirm("Discard anonymous conversation?")) {
+      return false;
+    }
+    setAnonymousMode(false);
+    setAnonymousSettings({});
+    setInput("");
+    att.clear();
+    resetChat();
+    navigate(null);
+    return true;
+  }, [anonymousMode, att, isStreaming, messages.length, navigate, resetChat]);
+
+  const toggleAnonymousMode = useCallback(() => {
+    if (anonymousMode) {
+      leaveAnonymousMode();
+      return;
+    }
+    enterAnonymousMode();
+  }, [anonymousMode, enterAnonymousMode, leaveAnonymousMode]);
+
+  const handleNewChat = useCallback(() => {
+    if (!anonymousMode) {
+      navigate(null);
+      return;
+    }
+    if (isStreaming) return;
+    setInput("");
+    att.clear();
+    resetChat(settings);
+  }, [anonymousMode, att, isStreaming, navigate, resetChat, settings]);
+
+  const handleSelectConversation = useCallback(
+    (uuid: string) => {
+      if (!leaveAnonymousMode()) return;
+      navigate(uuid);
+    },
+    [leaveAnonymousMode, navigate]
+  );
 
   const submit = useCallback(async () => {
     const text = input.trim();
     if ((!text && att.attachments.length === 0) || isStreaming) return;
 
-    const images = await Promise.all(
-      att.attachments.map(async (a) => ({
-        url: await uploadImage(a.file),
-        mediaType: a.mediaType
-      }))
-    );
+    const images = await materializeImages(att.attachments, anonymousMode);
 
-    let uuid = activeUuid;
-    if (!uuid) {
+    let uuid = effectiveActiveUuid;
+    if (!anonymousMode && !uuid) {
       uuid = crypto.randomUUID();
       conversations.add(uuid, text.slice(0, TITLE_MAX));
       claimLocal(uuid);
@@ -64,22 +149,23 @@ export function Chat() {
     setInput("");
     att.clear();
     const ok = await send({ uuid, text, images, settings });
-    if (ok) conversations.touch(uuid);
+    if (ok && uuid) conversations.touch(uuid);
   }, [
     input,
     att,
     isStreaming,
     send,
     settings,
-    activeUuid,
+    effectiveActiveUuid,
+    anonymousMode,
     conversations,
     navigate,
     claimLocal
   ]);
 
   const isShared =
-    activeUuid !== null &&
-    !conversations.index.some((e) => e.uuid === activeUuid);
+    effectiveActiveUuid !== null &&
+    !conversations.index.some((e) => e.uuid === effectiveActiveUuid);
 
   const clone = useCallback(async () => {
     if (!isShared || messages.length === 0) return;
@@ -110,31 +196,41 @@ export function Chat() {
 
   const handleRetry = useCallback(
     (id: string) => {
-      if (activeUuid) void retry(activeUuid, id, settings);
+      if (anonymousMode || effectiveActiveUuid) {
+        void retry(effectiveActiveUuid, id, settings);
+      }
     },
-    [activeUuid, retry, settings]
+    [anonymousMode, effectiveActiveUuid, retry, settings]
   );
 
   const handleEdit = useCallback(
     (id: string, text: string) => {
-      if (activeUuid)
-        void editUser({ uuid: activeUuid, nodeId: id, text, settings });
+      if (anonymousMode || effectiveActiveUuid) {
+        void editUser({
+          uuid: effectiveActiveUuid,
+          nodeId: id,
+          text,
+          settings
+        });
+      }
     },
-    [activeUuid, editUser, settings]
+    [anonymousMode, effectiveActiveUuid, editUser, settings]
   );
 
   const handleSelectSibling = useCallback(
     (parentId: string | null, childId: string) => {
-      if (activeUuid) selectSibling(activeUuid, parentId, childId);
+      if (anonymousMode || effectiveActiveUuid) {
+        selectSibling(effectiveActiveUuid, parentId, childId);
+      }
     },
-    [activeUuid, selectSibling]
+    [anonymousMode, effectiveActiveUuid, selectSibling]
   );
 
   const forcePush = useCallback(() => {
-    if (!activeUuid || isShared) return;
+    if (!effectiveActiveUuid || isShared) return;
     void withToast(
       api.api.conversations[":uuid"].$put({
-        param: { uuid: activeUuid },
+        param: { uuid: effectiveActiveUuid },
         json: { ...state, settings }
       }),
       {
@@ -143,12 +239,12 @@ export function Chat() {
         errorTitle: "Push failed"
       }
     );
-  }, [activeUuid, isShared, state, settings]);
+  }, [effectiveActiveUuid, isShared, state, settings]);
 
   const handleDelete = useCallback(
     async (uuid: string) => {
       conversations.remove(uuid);
-      if (activeUuid === uuid) navigate(null);
+      if (effectiveActiveUuid === uuid) navigate(null);
       await withToast(
         api.api.conversations[":uuid"].$delete({ param: { uuid } }),
         {
@@ -158,7 +254,7 @@ export function Chat() {
         }
       );
     },
-    [conversations, activeUuid, navigate]
+    [conversations, effectiveActiveUuid, navigate]
   );
 
   return (
@@ -170,16 +266,19 @@ export function Chat() {
     >
       <Sidebar
         entries={conversations.index}
-        activeUuid={activeUuid}
+        activeUuid={effectiveActiveUuid}
         drawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
-        onNewChat={() => navigate(null)}
-        onSelect={(uuid) => navigate(uuid)}
+        onNewChat={handleNewChat}
+        onSelect={handleSelectConversation}
         onDelete={handleDelete}
       />
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           isStreaming={isStreaming}
+          anonymousMode={anonymousMode}
+          anonymousDisabled={isStreaming}
+          onToggleAnonymous={toggleAnonymousMode}
           onOpenSidebar={() => setDrawerOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
         />
@@ -224,16 +323,38 @@ export function Chat() {
         localSettings={localSettings}
         drawerOpen={settingsOpen}
         showDebug={showDebug}
-        canForcePush={activeUuid !== null && !isShared}
+        canForcePush={effectiveActiveUuid !== null && !isShared}
         onToggleDebug={setShowDebug}
         onForcePush={forcePush}
         onCloseDrawer={() => setSettingsOpen(false)}
-        onUpdate={update}
+        onUpdate={updateSettings}
         onUpdateLocal={updateLocal}
-        onReset={reset}
+        onReset={resetSettings}
       />
     </div>
   );
+}
+
+async function materializeImages(
+  attachments: Attachment[],
+  anonymousMode: boolean
+): Promise<{ url: string; mediaType: string }[]> {
+  return Promise.all(
+    attachments.map(async (a) => ({
+      url: anonymousMode
+        ? await imageToDataUrl(a.file)
+        : await uploadImage(a.file),
+      mediaType: a.mediaType
+    }))
+  );
+}
+
+function cleanSettings(settings: RunSettings): RunSettings {
+  const cleaned: RunSettings = {};
+  for (const [k, v] of Object.entries(settings)) {
+    if (v !== undefined) (cleaned as Record<string, unknown>)[k] = v;
+  }
+  return cleaned;
 }
 
 function deriveTitle(messages: UiMessage[]): string {
