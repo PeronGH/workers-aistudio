@@ -14,11 +14,14 @@ import {
   type Preset,
   type RunSettings
 } from "../../shared/settings";
+import { useTheme } from "../hooks/useTheme";
 
 interface SettingsPanelProps {
   settings: RunSettings;
   localSettings: LocalSettings;
   drawerOpen: boolean;
+  showDebug: boolean;
+  onToggleDebug: (next: boolean) => void;
   onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
   onUpdateLocal: (patch: Partial<LocalSettings>) => void;
@@ -29,11 +32,14 @@ export function SettingsPanel({
   settings,
   localSettings,
   drawerOpen,
+  showDebug,
+  onToggleDebug,
   onCloseDrawer,
   onUpdate,
   onUpdateLocal,
   onReset
 }: SettingsPanelProps) {
+  const { dark, toggle: toggleTheme } = useTheme();
   return (
     <>
       {drawerOpen && (
@@ -68,6 +74,18 @@ export function SettingsPanel({
             <TranscriptionLanguageField
               value={localSettings.transcriptionLanguage}
               onChange={(v) => onUpdateLocal({ transcriptionLanguage: v })}
+            />
+            <ToggleRow
+              label="Dark mode"
+              checked={dark}
+              onCheckedChange={toggleTheme}
+              ariaLabel="Toggle dark mode"
+            />
+            <ToggleRow
+              label="Debug mode"
+              checked={showDebug}
+              onCheckedChange={onToggleDebug}
+              ariaLabel="Toggle debug mode"
             />
           </section>
 
@@ -306,6 +324,30 @@ function TranscriptionLanguageField({
           </Select.Option>
         ))}
       </Select>
+    </section>
+  );
+}
+
+function ToggleRow({
+  label,
+  checked,
+  onCheckedChange,
+  ariaLabel
+}: {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (next: boolean) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <section className="flex items-center justify-between">
+      <Label>{label}</Label>
+      <Switch
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        size="sm"
+        aria-label={ariaLabel}
+      />
     </section>
   );
 }

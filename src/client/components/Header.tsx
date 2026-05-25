@@ -1,24 +1,14 @@
-import { Button, Switch, Text } from "@cloudflare/kumo";
-import {
-  BugIcon,
-  CircleIcon,
-  ListIcon,
-  SlidersIcon
-} from "@phosphor-icons/react";
-import { ThemeToggle } from "./ThemeToggle";
+import { Button, Text } from "@cloudflare/kumo";
+import { CircleIcon, ListIcon, SlidersIcon } from "@phosphor-icons/react";
 
 interface HeaderProps {
   isStreaming: boolean;
-  showDebug: boolean;
-  onToggleDebug: (next: boolean) => void;
   onOpenSidebar: () => void;
   onOpenSettings: () => void;
 }
 
 export function Header({
   isStreaming,
-  showDebug,
-  onToggleDebug,
   onOpenSidebar,
   onOpenSettings
 }: HeaderProps) {
@@ -47,16 +37,6 @@ export function Header({
               {isStreaming ? "Streaming" : "Idle"}
             </Text>
           </div>
-          <div className="flex items-center gap-1.5">
-            <BugIcon size={14} className="text-kumo-inactive" />
-            <Switch
-              checked={showDebug}
-              onCheckedChange={onToggleDebug}
-              size="sm"
-              aria-label="Toggle debug mode"
-            />
-          </div>
-          <ThemeToggle />
           <Button
             variant="ghost"
             shape="square"

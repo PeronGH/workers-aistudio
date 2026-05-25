@@ -155,8 +155,6 @@ export function Chat() {
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           isStreaming={isStreaming}
-          showDebug={showDebug}
-          onToggleDebug={setShowDebug}
           onOpenSidebar={() => setDrawerOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
         />
@@ -205,6 +203,8 @@ export function Chat() {
         settings={settings}
         localSettings={localSettings}
         drawerOpen={settingsOpen}
+        showDebug={showDebug}
+        onToggleDebug={setShowDebug}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={update}
         onUpdateLocal={updateLocal}
