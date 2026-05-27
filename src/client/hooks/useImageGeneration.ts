@@ -1,37 +1,31 @@
 import { useCallback, useState } from "react";
-import type { ImageGenerationEntry, ImageSettings } from "../../shared/images";
+import type { ImageGenerationEntry } from "../../shared/images";
 import { api } from "../utils/api";
 import { uploadImage } from "../utils/attachments";
-
-export type ImageReference =
-  | { kind: "local"; clientKey: string; file: File; preview: string }
-  | { kind: "remote"; id: string };
-
-interface GenerateArgs {
-  prompt: string;
-  references: ImageReference[];
-  settings: ImageSettings;
-}
+import type { ImageDraft } from "./useImageDraft";
 
 export function useImageGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generate = useCallback(
-    async ({
-      prompt,
-      references,
-      settings
-    }: GenerateArgs): Promise<ImageGenerationEntry> => {
+    async (draft: ImageDraft): Promise<ImageGenerationEntry> => {
       setIsGenerating(true);
       try {
         const referenceIds = await Promise.all(
-          references.map(async (r) =>
+          draft.references.map(async (r) =>
             r.kind === "remote" ? r.id : (await uploadImage(r.file)).id
           )
         );
 
         const res = await api.api.images.generate.$post({
-          json: { ...settings, prompt, referenceIds }
+          json: {
+            prompt: draft.prompt,
+            model: draft.model,
+            width: draft.width,
+            height: draft.height,
+            steps: draft.steps,
+            referenceIds
+          }
         });
         if (!res.ok) {
           const body = await res.text().catch(() => "");
@@ -43,12 +37,12 @@ export function useImageGeneration() {
 
         return {
           id,
-          prompt,
+          prompt: draft.prompt,
           referenceIds,
-          model: settings.model,
-          width: settings.width,
-          height: settings.height,
-          steps: settings.steps,
+          model: draft.model,
+          width: draft.width,
+          height: draft.height,
+          steps: draft.steps,
           createdAt: Date.now()
         };
       } finally {

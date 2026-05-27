@@ -7,23 +7,34 @@ import {
   IMAGE_MODEL_LABELS,
   STEPS_RANGES,
   WIDTH_RANGE,
-  type ImageModel,
-  type ImageSettings
+  type ImageModel
 } from "../../../shared/images";
 
 interface ImageSettingsPanelProps {
-  settings: ImageSettings;
+  model: ImageModel;
+  width: number;
+  height: number;
+  steps: number;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
-  onUpdate: (patch: Partial<ImageSettings>) => void;
+  onModelChange: (model: ImageModel) => void;
+  onWidthChange: (value: number) => void;
+  onHeightChange: (value: number) => void;
+  onStepsChange: (value: number) => void;
   onReset: () => void;
 }
 
 export function ImageSettingsPanel({
-  settings,
+  model,
+  width,
+  height,
+  steps,
   drawerOpen,
   onCloseDrawer,
-  onUpdate,
+  onModelChange,
+  onWidthChange,
+  onHeightChange,
+  onStepsChange,
   onReset
 }: ImageSettingsPanelProps) {
   return (
@@ -68,9 +79,9 @@ export function ImageSettingsPanel({
               <Select
                 size="sm"
                 aria-label="Model"
-                value={settings.model}
+                value={model}
                 onValueChange={(v) =>
-                  typeof v === "string" && onUpdate({ model: v as ImageModel })
+                  typeof v === "string" && onModelChange(v as ImageModel)
                 }
                 className="w-full"
               >
@@ -84,21 +95,21 @@ export function ImageSettingsPanel({
 
             <SettingSlider
               label="Width"
-              value={settings.width}
+              value={width}
               range={WIDTH_RANGE}
-              onChange={(v) => onUpdate({ width: v })}
+              onChange={onWidthChange}
             />
             <SettingSlider
               label="Height"
-              value={settings.height}
+              value={height}
               range={HEIGHT_RANGE}
-              onChange={(v) => onUpdate({ height: v })}
+              onChange={onHeightChange}
             />
             <SettingSlider
               label="Steps"
-              value={settings.steps}
-              range={STEPS_RANGES[settings.model]}
-              onChange={(v) => onUpdate({ steps: v })}
+              value={steps}
+              range={STEPS_RANGES[model]}
+              onChange={onStepsChange}
             />
           </section>
         </div>

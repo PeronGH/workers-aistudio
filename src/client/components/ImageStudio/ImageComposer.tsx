@@ -6,7 +6,7 @@ import {
   XIcon
 } from "@phosphor-icons/react";
 import { MAX_REFERENCES, PROMPT_MAX } from "../../../shared/images";
-import type { ImageReference } from "../../hooks/useImageGeneration";
+import type { ImageReference } from "../../hooks/useImageDraft";
 
 interface ImageComposerProps {
   prompt: string;

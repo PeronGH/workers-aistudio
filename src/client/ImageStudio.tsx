@@ -12,13 +12,9 @@ import { ImageSidebarList } from "./components/ImageStudio/ImageSidebarList";
 import { ImageComposer } from "./components/ImageStudio/ImageComposer";
 import { ImageDetail } from "./components/ImageStudio/ImageDetail";
 import { ImageSettingsPanel } from "./components/ImageStudio/ImageSettingsPanel";
-import { useAttachments } from "./hooks/useAttachments";
-import {
-  useImageGeneration,
-  type ImageReference
-} from "./hooks/useImageGeneration";
+import { useImageDraft } from "./hooks/useImageDraft";
+import { useImageGeneration } from "./hooks/useImageGeneration";
 import { useImageHistory } from "./hooks/useImageHistory";
-import { useImageSettings } from "./hooks/useImageSettings";
 import { MAX_REFERENCES } from "../shared/images";
 import { toastError, toastSuccess } from "./utils/toast";
 
@@ -27,14 +23,27 @@ interface ImageStudioProps {
 }
 
 export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
-  const [prompt, setPrompt] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [remoteRefIds, setRemoteRefIds] = useState<string[]>([]);
-  const localRefs = useAttachments();
+  const {
+    draft,
+    setPrompt,
+    setModel,
+    setWidth,
+    setHeight,
+    setSteps,
+    addLocalFiles,
+    addRemoteReference,
+    removeReference,
+    loadFromEntry,
+    clearComposer,
+    resetSettings,
+    onPaste,
+    onDragOver,
+    onDrop
+  } = useImageDraft();
   const history = useImageHistory();
-  const { settings, update, reset } = useImageSettings();
   const { generate, remove, isGenerating } = useImageGeneration();
 
   const activeEntry = useMemo(
@@ -42,72 +51,19 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
     [history.entries, activeId]
   );
 
-  const references = useMemo<ImageReference[]>(() => {
-    const remote: ImageReference[] = remoteRefIds.map((id) => ({
-      kind: "remote",
-      id
-    }));
-    const local: ImageReference[] = localRefs.attachments.map((a) => ({
-      kind: "local",
-      clientKey: a.id,
-      file: a.file,
-      preview: a.preview
-    }));
-    return [...remote, ...local];
-  }, [remoteRefIds, localRefs.attachments]);
-
-  const removeReference = useCallback(
-    (ref: ImageReference) => {
-      if (ref.kind === "local") {
-        localRefs.remove(ref.clientKey);
-      } else {
-        setRemoteRefIds((prev) => prev.filter((id) => id !== ref.id));
-      }
-    },
-    [localRefs]
-  );
-
-  const clearReferences = useCallback(() => {
-    localRefs.clear();
-    setRemoteRefIds([]);
-  }, [localRefs]);
-
-  const useAsReference = useCallback(
-    (id: string) => {
-      if (references.length >= MAX_REFERENCES) {
-        toastError(
-          "Reference limit reached",
-          `Up to ${MAX_REFERENCES} reference images.`
-        );
-        return;
-      }
-      setRemoteRefIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-    },
-    [references.length]
-  );
-
   const submit = useCallback(async () => {
-    const text = prompt.trim();
+    const text = draft.prompt.trim();
     if (!text || isGenerating) return;
     try {
-      const entry = await generate({ prompt: text, references, settings });
+      const entry = await generate({ ...draft, prompt: text });
       history.add(entry);
       setActiveId(entry.id);
-      setPrompt("");
-      clearReferences();
+      clearComposer();
       toastSuccess("Image generated");
     } catch (err) {
       toastError("Generation failed", (err as Error).message);
     }
-  }, [
-    prompt,
-    isGenerating,
-    generate,
-    references,
-    settings,
-    history,
-    clearReferences
-  ]);
+  }, [draft, isGenerating, generate, history, clearComposer]);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -122,36 +78,39 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
     [history, activeId, remove]
   );
 
-  const startFresh = useCallback(() => {
-    setActiveId(null);
-    setPrompt("");
-    clearReferences();
-  }, [clearReferences]);
-
   const selectEntry = useCallback(
     (id: string) => {
       const entry = history.entries.find((e) => e.id === id);
       if (!entry) return;
       setActiveId(id);
       setDrawerOpen(false);
-      // Hydrate the settings panel so the composer would regenerate
-      // with the same params as the selected entry.
-      update({
-        model: entry.model,
-        width: entry.width,
-        height: entry.height,
-        steps: entry.steps
-      });
+      loadFromEntry(entry);
     },
-    [history.entries, update]
+    [history.entries, loadFromEntry]
+  );
+
+  const startFresh = useCallback(() => {
+    setActiveId(null);
+    clearComposer();
+  }, [clearComposer]);
+
+  const useAsReference = useCallback(
+    (id: string) => {
+      if (!addRemoteReference(id)) {
+        toastError(
+          "Reference limit reached",
+          `Up to ${MAX_REFERENCES} reference images.`
+        );
+      }
+    },
+    [addRemoteReference]
   );
 
   return (
     <div
       className="flex h-screen bg-kumo-elevated"
-      onDragOver={localRefs.onDragOver}
-      onDragLeave={localRefs.onDragLeave}
-      onDrop={localRefs.onDrop}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       <Sidebar
         mode="images"
@@ -220,12 +179,12 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
           </div>
           <div className="border-t border-kumo-line bg-kumo-base">
             <ImageComposer
-              prompt={prompt}
+              prompt={draft.prompt}
               onPromptChange={setPrompt}
-              references={references}
-              onAddFiles={localRefs.add}
+              references={draft.references}
+              onAddFiles={addLocalFiles}
               onRemoveReference={removeReference}
-              onPaste={localRefs.onPaste}
+              onPaste={onPaste}
               onSubmit={submit}
               isGenerating={isGenerating}
             />
@@ -233,11 +192,17 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
         </div>
       </div>
       <ImageSettingsPanel
-        settings={settings}
+        model={draft.model}
+        width={draft.width}
+        height={draft.height}
+        steps={draft.steps}
         drawerOpen={settingsOpen}
         onCloseDrawer={() => setSettingsOpen(false)}
-        onUpdate={update}
-        onReset={reset}
+        onModelChange={setModel}
+        onWidthChange={setWidth}
+        onHeightChange={setHeight}
+        onStepsChange={setSteps}
+        onReset={resetSettings}
       />
     </div>
   );
