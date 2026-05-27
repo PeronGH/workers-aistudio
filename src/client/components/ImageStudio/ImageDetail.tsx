@@ -14,23 +14,13 @@ interface ImageDetailProps {
 export function ImageDetail({ entry, onUseAsReference }: ImageDetailProps) {
   return (
     <div className="max-w-4xl mx-auto w-full px-5 py-6 space-y-5">
-      <div className="rounded-xl border border-kumo-line bg-kumo-base overflow-hidden">
-        <img
-          src={`/api/images/${entry.id}`}
-          alt={entry.prompt}
-          className="w-full h-auto bg-kumo-control"
-        />
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={<ArrowBendUpLeftIcon size={14} />}
-          onClick={() => onUseAsReference(entry.id)}
-        >
-          Use as reference
-        </Button>
-      </div>
+      <ImageWithReuseAction
+        id={entry.id}
+        alt={entry.prompt}
+        onUseAsReference={onUseAsReference}
+        className="rounded-xl border border-kumo-line bg-kumo-base"
+        imgClassName="w-full h-auto bg-kumo-control"
+      />
       <section className="space-y-2">
         <div className="flex items-center gap-2 text-xs text-kumo-subtle">
           <span className="px-2 py-0.5 rounded-full bg-kumo-control border border-kumo-line">
@@ -53,23 +43,48 @@ export function ImageDetail({ entry, onUseAsReference }: ImageDetailProps) {
           </Text>
           <div className="flex gap-2 flex-wrap">
             {entry.referenceIds.map((id) => (
-              <button
+              <ImageWithReuseAction
                 key={id}
-                type="button"
-                onClick={() => onUseAsReference(id)}
-                aria-label="Use this reference again"
-                className="block h-20 w-20 rounded-md border border-kumo-line overflow-hidden bg-kumo-control hover:ring-2 hover:ring-kumo-ring transition-shadow"
-              >
-                <img
-                  src={`/api/images/${id}`}
-                  alt="reference"
-                  className="h-full w-full object-cover"
-                />
-              </button>
+                id={id}
+                alt="reference"
+                onUseAsReference={onUseAsReference}
+                className="h-20 w-20 rounded-md border border-kumo-line bg-kumo-control"
+                imgClassName="h-full w-full object-cover"
+              />
             ))}
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function ImageWithReuseAction({
+  id,
+  alt,
+  onUseAsReference,
+  className,
+  imgClassName
+}: {
+  id: string;
+  alt: string;
+  onUseAsReference: (id: string) => void;
+  className?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <div className={`group relative overflow-hidden ${className ?? ""}`}>
+      <img src={`/api/images/${id}`} alt={alt} className={imgClassName} />
+      <Button
+        variant="secondary"
+        shape="square"
+        size="xs"
+        aria-label="Use as reference"
+        title="Use as reference"
+        icon={<ArrowBendUpLeftIcon size={12} />}
+        onClick={() => onUseAsReference(id)}
+        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity bg-kumo-base/90 backdrop-blur-sm shadow-sm"
+      />
     </div>
   );
 }
