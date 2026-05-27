@@ -32,7 +32,7 @@ export type ImageSettings = z.infer<typeof ImageSettingsSchema>;
 
 export const ImageRequestSchema = ImageSettingsSchema.extend({
   prompt: z.string().min(1).max(PROMPT_MAX),
-  referenceIds: z.array(z.string().min(1)).max(MAX_REFERENCES)
+  referenceIds: z.array(z.uuid()).max(MAX_REFERENCES)
 });
 
 export type ImageRequest = z.infer<typeof ImageRequestSchema>;

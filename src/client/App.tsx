@@ -1,9 +1,12 @@
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Toasty } from "@cloudflare/kumo/components/toast";
 import { Chat } from "./Chat";
-import { ImageStudio } from "./ImageStudio";
 import { useView } from "./hooks/useView";
 import { toastManager } from "./utils/toast";
+
+const ImageStudio = lazy(() =>
+  import("./ImageStudio").then((m) => ({ default: m.ImageStudio }))
+);
 
 export default function App() {
   const [view, navigate] = useView();

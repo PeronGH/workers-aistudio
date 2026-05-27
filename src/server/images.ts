@@ -5,14 +5,13 @@ import { ImageRequestSchema, type ImageModel } from "../shared/images";
 
 const PREFIX = "images/";
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const ID_RE = /^[0-9a-f-]{36}$/i;
 
 const MODEL_ID: Record<ImageModel, keyof AiModels> = {
   "flux2-dev": "@cf/black-forest-labs/flux-2-dev",
   "flux2-klein-9b": "@cf/black-forest-labs/flux-2-klein-9b"
 };
 
-const IdParamSchema = z.object({ id: z.string().regex(ID_RE) });
+const IdParamSchema = z.object({ id: z.uuid() });
 
 export const imageRoutes = new Hono<{ Bindings: Env }>()
   .post("/", async (c) => {
@@ -39,22 +38,24 @@ export const imageRoutes = new Hono<{ Bindings: Env }>()
     const { prompt, model, width, height, steps, referenceIds } =
       c.req.valid("json");
 
+    const blobs = await Promise.all(
+      referenceIds.map(async (refId) => {
+        const object = await c.env.UPLOADS.get(PREFIX + refId);
+        return object ? await object.blob() : null;
+      })
+    );
+    const missing = referenceIds.find((_, i) => blobs[i] === null);
+    if (missing) {
+      return c.json({ error: `Reference not found: ${missing}` }, 400);
+    }
+
     const form = new FormData();
     form.append("prompt", prompt);
     form.append("width", String(width));
     form.append("height", String(height));
     form.append("steps", String(steps));
-
-    for (const [i, refId] of referenceIds.entries()) {
-      if (!ID_RE.test(refId)) {
-        return c.json({ error: `Invalid reference id: ${refId}` }, 400);
-      }
-      const object = await c.env.UPLOADS.get(PREFIX + refId);
-      if (!object) {
-        return c.json({ error: `Reference not found: ${refId}` }, 400);
-      }
-      const blob = await object.blob();
-      form.append(`input_image_${i}`, blob, refId);
+    for (const [i, blob] of blobs.entries()) {
+      form.append(`input_image_${i}`, blob!, referenceIds[i]);
     }
 
     const formResponse = new Response(form);
