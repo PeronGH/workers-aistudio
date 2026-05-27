@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   DEFAULT_IMAGE_SETTINGS,
   ImageSettingsSchema,
+  STEPS_RANGES,
   type ImageSettings
 } from "../../shared/images";
 
@@ -19,7 +20,20 @@ export function useImageSettings() {
   }, [settings]);
 
   const update = useCallback((patch: Partial<ImageSettings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      // Snap steps to the new model's default when the model changes;
+      // dev's 28–50 and klein's 4–8 don't overlap, so carrying the old
+      // value across is always wrong.
+      if (
+        patch.model &&
+        patch.model !== prev.model &&
+        patch.steps === undefined
+      ) {
+        next.steps = STEPS_RANGES[patch.model].default;
+      }
+      return next;
+    });
   }, []);
 
   const reset = useCallback(() => setSettings(DEFAULT_IMAGE_SETTINGS), []);

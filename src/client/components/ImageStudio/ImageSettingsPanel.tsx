@@ -5,7 +5,7 @@ import {
   HEIGHT_RANGE,
   IMAGE_MODELS,
   IMAGE_MODEL_LABELS,
-  STEPS_RANGE,
+  STEPS_RANGES,
   WIDTH_RANGE,
   type ImageModel,
   type ImageSettings
@@ -97,7 +97,7 @@ export function ImageSettingsPanel({
             <SettingSlider
               label="Steps"
               value={settings.steps}
-              range={STEPS_RANGE}
+              range={STEPS_RANGES[settings.model]}
               onChange={(v) => onUpdate({ steps: v })}
             />
           </section>
