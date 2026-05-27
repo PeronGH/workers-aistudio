@@ -1,30 +1,27 @@
-import { Button, Text } from "@cloudflare/kumo";
+import type { ReactNode } from "react";
+import { Button } from "@cloudflare/kumo";
 import {
   ChatCircleDotsIcon,
-  PencilSimpleLineIcon,
-  TrashIcon,
+  ImageSquareIcon,
   XIcon
 } from "@phosphor-icons/react";
-import type { ConversationIndexEntry } from "../hooks/useConversations";
+
+export type SidebarMode = "chat" | "images";
 
 interface SidebarProps {
-  entries: ConversationIndexEntry[];
-  activeUuid: string | null;
+  mode: SidebarMode;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
-  onNewChat: () => void;
-  onSelect: (uuid: string) => void;
-  onDelete: (uuid: string) => void;
+  onSelectMode: (mode: SidebarMode) => void;
+  children: ReactNode;
 }
 
 export function Sidebar({
-  entries,
-  activeUuid,
+  mode,
   drawerOpen,
   onCloseDrawer,
-  onNewChat,
-  onSelect,
-  onDelete
+  onSelectMode,
+  children
 }: SidebarProps) {
   return (
     <>
@@ -42,17 +39,18 @@ export function Sidebar({
         } md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-kumo-line bg-kumo-base flex flex-col transition-transform`}
       >
         <div className="px-3 py-3 border-b border-kumo-line flex items-center gap-2">
-          <Button
-            variant="secondary"
-            icon={<PencilSimpleLineIcon size={14} />}
-            onClick={() => {
-              onNewChat();
-              onCloseDrawer();
-            }}
-            className="flex-1"
-          >
-            New chat
-          </Button>
+          <ModeButton
+            label="Chat"
+            icon={<ChatCircleDotsIcon size={14} />}
+            active={mode === "chat"}
+            onClick={() => onSelectMode("chat")}
+          />
+          <ModeButton
+            label="Image Studio"
+            icon={<ImageSquareIcon size={14} />}
+            active={mode === "images"}
+            onClick={() => onSelectMode("images")}
+          />
           <Button
             variant="ghost"
             shape="square"
@@ -63,105 +61,34 @@ export function Sidebar({
             className="md:hidden"
           />
         </div>
-        <ul className="flex-1 overflow-y-auto p-2 space-y-1">
-          {entries.length === 0 && (
-            <li className="px-2 py-6 text-center">
-              <Text size="xs" variant="secondary">
-                No conversations yet.
-              </Text>
-            </li>
-          )}
-          {entries.map((entry) => (
-            <SidebarRow
-              key={entry.uuid}
-              entry={entry}
-              active={entry.uuid === activeUuid}
-              onSelect={() => {
-                onSelect(entry.uuid);
-                onCloseDrawer();
-              }}
-              onDelete={() => onDelete(entry.uuid)}
-            />
-          ))}
-        </ul>
+        {children}
       </aside>
     </>
   );
 }
 
-function SidebarRow({
-  entry,
+function ModeButton({
+  label,
+  icon,
   active,
-  onSelect,
-  onDelete
+  onClick
 }: {
-  entry: ConversationIndexEntry;
+  label: string;
+  icon: ReactNode;
   active: boolean;
-  onSelect: () => void;
-  onDelete: () => void;
+  onClick: () => void;
 }) {
-  const title = entry.title || "Image";
   return (
-    <li
-      aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-1 pr-1 rounded-md transition-colors border-l-2 ${
-        active
-          ? "border-kumo-brand bg-kumo-brand/10"
-          : "border-transparent hover:bg-kumo-control/50"
+    <Button
+      variant={active ? "primary" : "ghost"}
+      size="xs"
+      icon={icon}
+      onClick={onClick}
+      className={`flex-1 justify-center ${
+        active ? "" : "text-kumo-default/80 hover:bg-kumo-control/60"
       }`}
     >
-      <Button
-        variant="ghost"
-        size="xs"
-        onClick={onSelect}
-        className="h-auto flex-1 min-w-0 justify-start gap-2 rounded-none bg-transparent pl-2 pr-1 py-1.5 text-left font-normal shadow-none hover:bg-transparent"
-      >
-        <ChatCircleDotsIcon
-          size={14}
-          className={`shrink-0 ${active ? "text-kumo-brand" : "text-kumo-inactive"}`}
-        />
-        <div className="flex-1 min-w-0">
-          <div
-            className={`truncate text-sm ${active ? "font-medium text-kumo-default" : "font-normal text-kumo-default/80"}`}
-          >
-            {title}
-          </div>
-          <div className="text-[10px] text-kumo-subtle">
-            {formatRelative(entry.updatedAt)}
-          </div>
-        </div>
-      </Button>
-      <Button
-        variant="ghost"
-        shape="square"
-        size="xs"
-        aria-label="Delete conversation"
-        icon={<TrashIcon size={12} />}
-        onClick={() => {
-          if (confirm(`Delete "${title}"?`)) onDelete();
-        }}
-        className="opacity-0 group-hover:opacity-100 text-kumo-inactive hover:text-kumo-danger transition-opacity"
-      />
-    </li>
+      {label}
+    </Button>
   );
-}
-
-const RTF = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-  ["year", 31_536_000_000],
-  ["month", 2_592_000_000],
-  ["week", 604_800_000],
-  ["day", 86_400_000],
-  ["hour", 3_600_000],
-  ["minute", 60_000],
-  ["second", 1_000]
-];
-
-function formatRelative(ts: number): string {
-  const diff = ts - Date.now();
-  const abs = Math.abs(diff);
-  for (const [unit, ms] of UNITS) {
-    if (abs >= ms) return RTF.format(Math.round(diff / ms), unit);
-  }
-  return "just now";
 }

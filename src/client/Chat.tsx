@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { useChat } from "./hooks/useChat";
 import { useConversations } from "./hooks/useConversations";
-import { useActiveUuid } from "./hooks/useActiveUuid";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useLocalSettings } from "./hooks/useLocalSettings";
 import { useAttachments } from "./hooks/useAttachments";
@@ -18,19 +17,29 @@ import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Sidebar } from "./components/Sidebar";
+import { ChatSidebarList } from "./components/ChatSidebarList";
 import { SharedFooter } from "./components/SharedFooter";
 import { withToast } from "./utils/toast";
 
 const TITLE_MAX = 40;
 
-export function Chat() {
+interface ChatProps {
+  activeUuid: string | null;
+  onNavigate: (uuid: string | null) => void;
+  onOpenImageStudio: () => void;
+}
+
+export function Chat({
+  activeUuid,
+  onNavigate: navigate,
+  onOpenImageStudio
+}: ChatProps) {
   const [input, setInput] = useState("");
   const [showDebug, setShowDebug] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [anonymousSettings, setAnonymousSettings] = useState<RunSettings>({});
-  const [activeUuid, navigate] = useActiveUuid();
   const effectiveActiveUuid = anonymousMode ? null : activeUuid;
   const conversations = useConversations();
   const {
@@ -266,14 +275,29 @@ export function Chat() {
       onDrop={att.onDrop}
     >
       <Sidebar
-        entries={conversations.index}
-        activeUuid={effectiveActiveUuid}
+        mode="chat"
         drawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
-        onNewChat={handleNewChat}
-        onSelect={handleSelectConversation}
-        onDelete={handleDelete}
-      />
+        onSelectMode={(m) => {
+          if (m === "images" && leaveAnonymousMode()) {
+            onOpenImageStudio();
+          }
+        }}
+      >
+        <ChatSidebarList
+          entries={conversations.index}
+          activeUuid={effectiveActiveUuid}
+          onNewChat={() => {
+            handleNewChat();
+            setDrawerOpen(false);
+          }}
+          onSelect={(uuid) => {
+            handleSelectConversation(uuid);
+            setDrawerOpen(false);
+          }}
+          onDelete={handleDelete}
+        />
+      </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           isStreaming={isStreaming}
@@ -344,7 +368,7 @@ async function materializeImages(
     attachments.map(async (a) => ({
       url: anonymousMode
         ? await imageToDataUrl(a.file)
-        : await uploadImage(a.file),
+        : (await uploadImage(a.file)).url,
       mediaType: a.mediaType
     }))
   );

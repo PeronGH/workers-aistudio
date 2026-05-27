@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { chatRoutes } from "./chat";
 import { conversationRoutes } from "./conversations";
+import { imageRoutes } from "./images";
 import { transcribeRoutes } from "./transcribe";
 import { uploadRoutes } from "./upload";
 
@@ -8,7 +9,8 @@ const routes = new Hono<{ Bindings: Env }>()
   .route("/api/chat", chatRoutes)
   .route("/api/upload", uploadRoutes)
   .route("/api/transcribe", transcribeRoutes)
-  .route("/api/conversations", conversationRoutes);
+  .route("/api/conversations", conversationRoutes)
+  .route("/api/images", imageRoutes);
 
 routes.notFound((c) => c.text("Not found", 404));
 

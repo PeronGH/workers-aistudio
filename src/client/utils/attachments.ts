@@ -14,7 +14,12 @@ export function createAttachment(file: File): Attachment {
   };
 }
 
-export async function uploadImage(file: File): Promise<string> {
+export interface UploadedImage {
+  key: string;
+  url: string;
+}
+
+export async function uploadImage(file: File): Promise<UploadedImage> {
   const res = await fetch("/api/upload", {
     method: "POST",
     headers: { "content-type": file.type },
@@ -24,8 +29,8 @@ export async function uploadImage(file: File): Promise<string> {
     const body = await res.text().catch(() => "");
     throw new Error(`Upload failed (${res.status}): ${body || res.statusText}`);
   }
-  const { url } = (await res.json()) as { url: string };
-  return new URL(url, window.location.origin).toString();
+  const { key, url } = (await res.json()) as { key: string; url: string };
+  return { key, url: new URL(url, window.location.origin).toString() };
 }
 
 export async function imageToDataUrl(file: File): Promise<string> {
