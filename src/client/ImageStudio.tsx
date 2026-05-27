@@ -128,6 +128,24 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
     clearReferences();
   }, [clearReferences]);
 
+  const selectEntry = useCallback(
+    (id: string) => {
+      const entry = history.entries.find((e) => e.id === id);
+      if (!entry) return;
+      setActiveId(id);
+      setDrawerOpen(false);
+      // Hydrate the settings panel so the composer would regenerate
+      // with the same params as the selected entry.
+      update({
+        model: entry.model,
+        width: entry.width,
+        height: entry.height,
+        steps: entry.steps
+      });
+    },
+    [history.entries, update]
+  );
+
   return (
     <div
       className="flex h-screen bg-kumo-elevated"
@@ -159,10 +177,7 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
         <ImageSidebarList
           entries={history.entries}
           activeId={activeId}
-          onSelect={(id) => {
-            setActiveId(id);
-            setDrawerOpen(false);
-          }}
+          onSelect={selectEntry}
           onDelete={handleDelete}
         />
       </Sidebar>
