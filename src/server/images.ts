@@ -3,26 +3,40 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { ImageRequestSchema, type ImageModel } from "../shared/images";
 
-const ATTACHMENT_PREFIX = "attachments/";
-const IMAGE_PREFIX = "images/";
-const KEY_RE = /^[A-Za-z0-9._-]+$/;
+const PREFIX = "images/";
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ID_RE = /^[0-9a-f-]{36}$/i;
 
 const MODEL_ID: Record<ImageModel, keyof AiModels> = {
   "flux2-dev": "@cf/black-forest-labs/flux-2-dev",
   "flux2-klein-9b": "@cf/black-forest-labs/flux-2-klein-9b"
 };
 
-const IdParamSchema = z.object({
-  id: z.string().regex(KEY_RE)
-});
-
-const DeleteQuerySchema = z.object({
-  references: z.string().optional()
-});
+const IdParamSchema = z.object({ id: z.string().regex(ID_RE) });
 
 export const imageRoutes = new Hono<{ Bindings: Env }>()
-  .post("/", zValidator("json", ImageRequestSchema), async (c) => {
-    const { prompt, model, width, height, steps, referenceKeys } =
+  .post("/", async (c) => {
+    const contentType = c.req.header("content-type") ?? "";
+    if (!contentType.startsWith("image/")) {
+      return c.json({ error: "Only image uploads are accepted" }, 415);
+    }
+    const contentLength = Number(c.req.header("content-length") ?? "0");
+    if (contentLength > MAX_UPLOAD_BYTES) {
+      return c.json({ error: "File too large (max 10 MB)" }, 413);
+    }
+    if (!c.req.raw.body) {
+      return c.json({ error: "Empty body" }, 400);
+    }
+
+    const id = crypto.randomUUID();
+    await c.env.UPLOADS.put(PREFIX + id, c.req.raw.body, {
+      httpMetadata: { contentType }
+    });
+
+    return c.json({ id, url: `/api/images/${id}` });
+  })
+  .post("/generate", zValidator("json", ImageRequestSchema), async (c) => {
+    const { prompt, model, width, height, steps, referenceIds } =
       c.req.valid("json");
 
     const form = new FormData();
@@ -31,16 +45,16 @@ export const imageRoutes = new Hono<{ Bindings: Env }>()
     form.append("height", String(height));
     form.append("steps", String(steps));
 
-    for (const [i, key] of referenceKeys.entries()) {
-      if (!KEY_RE.test(key)) {
-        return c.json({ error: `Invalid reference key: ${key}` }, 400);
+    for (const [i, refId] of referenceIds.entries()) {
+      if (!ID_RE.test(refId)) {
+        return c.json({ error: `Invalid reference id: ${refId}` }, 400);
       }
-      const object = await c.env.UPLOADS.get(ATTACHMENT_PREFIX + key);
+      const object = await c.env.UPLOADS.get(PREFIX + refId);
       if (!object) {
-        return c.json({ error: `Reference not found: ${key}` }, 400);
+        return c.json({ error: `Reference not found: ${refId}` }, 400);
       }
       const blob = await object.blob();
-      form.append(`input_image_${i}`, blob, key);
+      form.append(`input_image_${i}`, blob, refId);
     }
 
     const formResponse = new Response(form);
@@ -63,8 +77,8 @@ export const imageRoutes = new Hono<{ Bindings: Env }>()
     }
 
     const bytes = base64ToBytes(resp.image);
-    const id = `${crypto.randomUUID()}.png`;
-    await c.env.UPLOADS.put(IMAGE_PREFIX + id, bytes, {
+    const id = crypto.randomUUID();
+    await c.env.UPLOADS.put(PREFIX + id, bytes, {
       httpMetadata: { contentType: "image/png" }
     });
 
@@ -72,7 +86,7 @@ export const imageRoutes = new Hono<{ Bindings: Env }>()
   })
   .get("/:id", zValidator("param", IdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const object = await c.env.UPLOADS.get(IMAGE_PREFIX + id);
+    const object = await c.env.UPLOADS.get(PREFIX + id);
     if (!object) return c.text("Not found", 404);
     const headers = new Headers();
     object.writeHttpMetadata(headers);
@@ -80,23 +94,11 @@ export const imageRoutes = new Hono<{ Bindings: Env }>()
     headers.set("etag", object.httpEtag);
     return new Response(object.body, { headers });
   })
-  .delete(
-    "/:id",
-    zValidator("param", IdParamSchema),
-    zValidator("query", DeleteQuerySchema),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { references } = c.req.valid("query");
-      await c.env.UPLOADS.delete(IMAGE_PREFIX + id);
-      if (references) {
-        const keys = references.split(",").filter((k) => KEY_RE.test(k));
-        await Promise.all(
-          keys.map((k) => c.env.UPLOADS.delete(ATTACHMENT_PREFIX + k))
-        );
-      }
-      return c.body(null, 204);
-    }
-  );
+  .delete("/:id", zValidator("param", IdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    await c.env.UPLOADS.delete(PREFIX + id);
+    return c.body(null, 204);
+  });
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);

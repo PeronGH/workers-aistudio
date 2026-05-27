@@ -6,14 +6,14 @@ import {
   XIcon
 } from "@phosphor-icons/react";
 import { MAX_REFERENCES, PROMPT_MAX } from "../../../shared/images";
-import type { Attachment } from "../../utils/attachments";
+import type { ImageReference } from "../../hooks/useImageGeneration";
 
 interface ImageComposerProps {
   prompt: string;
   onPromptChange: (next: string) => void;
-  references: Attachment[];
+  references: ImageReference[];
   onAddFiles: (files: FileList | File[]) => void;
-  onRemoveReference: (id: string) => void;
+  onRemoveReference: (ref: ImageReference) => void;
   onPaste: (e: React.ClipboardEvent) => void;
   onSubmit: () => void;
   isGenerating: boolean;
@@ -61,26 +61,12 @@ export function ImageComposer({
 
       {references.length > 0 && (
         <div className="flex gap-2 mb-2 flex-wrap">
-          {references.map((att) => (
-            <div
-              key={att.id}
-              className="relative group rounded-lg border border-kumo-line bg-kumo-control overflow-hidden"
-            >
-              <img
-                src={att.preview}
-                alt={att.file.name}
-                className="h-16 w-16 object-cover"
-              />
-              <Button
-                variant="secondary"
-                shape="circle"
-                size="xs"
-                aria-label={`Remove ${att.file.name}`}
-                icon={<XIcon size={10} />}
-                onClick={() => onRemoveReference(att.id)}
-                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-              />
-            </div>
+          {references.map((ref) => (
+            <ReferenceThumb
+              key={refKey(ref)}
+              reference={ref}
+              onRemove={() => onRemoveReference(ref)}
+            />
           ))}
         </div>
       )}
@@ -144,4 +130,37 @@ export function ImageComposer({
       </div>
     </form>
   );
+}
+
+function ReferenceThumb({
+  reference,
+  onRemove
+}: {
+  reference: ImageReference;
+  onRemove: () => void;
+}) {
+  const src =
+    reference.kind === "local"
+      ? reference.preview
+      : `/api/images/${reference.id}`;
+  const alt =
+    reference.kind === "local" ? reference.file.name : "Reference image";
+  return (
+    <div className="relative group rounded-lg border border-kumo-line bg-kumo-control overflow-hidden">
+      <img src={src} alt={alt} className="h-16 w-16 object-cover" />
+      <Button
+        variant="secondary"
+        shape="circle"
+        size="xs"
+        aria-label={`Remove ${alt}`}
+        icon={<XIcon size={10} />}
+        onClick={onRemove}
+        className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+    </div>
+  );
+}
+
+function refKey(ref: ImageReference): string {
+  return ref.kind === "local" ? `local:${ref.clientKey}` : `remote:${ref.id}`;
 }

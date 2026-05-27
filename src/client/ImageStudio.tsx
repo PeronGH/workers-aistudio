@@ -12,9 +12,13 @@ import { ImageComposer } from "./components/ImageStudio/ImageComposer";
 import { ImageDetail } from "./components/ImageStudio/ImageDetail";
 import { ImageSettingsPanel } from "./components/ImageStudio/ImageSettingsPanel";
 import { useAttachments } from "./hooks/useAttachments";
-import { useImageGeneration } from "./hooks/useImageGeneration";
+import {
+  useImageGeneration,
+  type ImageReference
+} from "./hooks/useImageGeneration";
 import { useImageHistory } from "./hooks/useImageHistory";
 import { useImageSettings } from "./hooks/useImageSettings";
+import { MAX_REFERENCES } from "../shared/images";
 import { toastError, toastSuccess } from "./utils/toast";
 
 interface ImageStudioProps {
@@ -26,7 +30,8 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const refs = useAttachments();
+  const [remoteRefIds, setRemoteRefIds] = useState<string[]>([]);
+  const localRefs = useAttachments();
   const history = useImageHistory();
   const { settings, update, reset } = useImageSettings();
   const { generate, remove, isGenerating } = useImageGeneration();
@@ -36,33 +41,79 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
     [history.entries, activeId]
   );
 
+  const references = useMemo<ImageReference[]>(() => {
+    const remote: ImageReference[] = remoteRefIds.map((id) => ({
+      kind: "remote",
+      id
+    }));
+    const local: ImageReference[] = localRefs.attachments.map((a) => ({
+      kind: "local",
+      clientKey: a.id,
+      file: a.file,
+      preview: a.preview
+    }));
+    return [...remote, ...local];
+  }, [remoteRefIds, localRefs.attachments]);
+
+  const removeReference = useCallback(
+    (ref: ImageReference) => {
+      if (ref.kind === "local") {
+        localRefs.remove(ref.clientKey);
+      } else {
+        setRemoteRefIds((prev) => prev.filter((id) => id !== ref.id));
+      }
+    },
+    [localRefs]
+  );
+
+  const clearReferences = useCallback(() => {
+    localRefs.clear();
+    setRemoteRefIds([]);
+  }, [localRefs]);
+
+  const useAsReference = useCallback(
+    (id: string) => {
+      if (references.length >= MAX_REFERENCES) {
+        toastError(
+          "Reference limit reached",
+          `Up to ${MAX_REFERENCES} reference images.`
+        );
+        return;
+      }
+      setRemoteRefIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    },
+    [references.length]
+  );
+
   const submit = useCallback(async () => {
     const text = prompt.trim();
     if (!text || isGenerating) return;
     try {
-      const entry = await generate({
-        prompt: text,
-        references: refs.attachments,
-        settings
-      });
+      const entry = await generate({ prompt: text, references, settings });
       history.add(entry);
       setActiveId(entry.id);
       setPrompt("");
-      refs.clear();
+      clearReferences();
       toastSuccess("Image generated");
     } catch (err) {
       toastError("Generation failed", (err as Error).message);
     }
-  }, [prompt, isGenerating, generate, refs, settings, history]);
+  }, [
+    prompt,
+    isGenerating,
+    generate,
+    references,
+    settings,
+    history,
+    clearReferences
+  ]);
 
   const handleDelete = useCallback(
     async (id: string) => {
-      const entry = history.entries.find((e) => e.id === id);
-      if (!entry) return;
       history.remove(id);
       if (activeId === id) setActiveId(null);
       try {
-        await remove(entry);
+        await remove(id);
       } catch (err) {
         toastError("Delete failed", (err as Error).message);
       }
@@ -73,15 +124,15 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
   const startFresh = useCallback(() => {
     setActiveId(null);
     setPrompt("");
-    refs.clear();
-  }, [refs]);
+    clearReferences();
+  }, [clearReferences]);
 
   return (
     <div
       className="flex h-screen bg-kumo-elevated"
-      onDragOver={refs.onDragOver}
-      onDragLeave={refs.onDragLeave}
-      onDrop={refs.onDrop}
+      onDragOver={localRefs.onDragOver}
+      onDragLeave={localRefs.onDragLeave}
+      onDrop={localRefs.onDrop}
     >
       <Sidebar
         mode="images"
@@ -143,7 +194,10 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto">
             {activeEntry ? (
-              <ImageDetail entry={activeEntry} />
+              <ImageDetail
+                entry={activeEntry}
+                onUseAsReference={useAsReference}
+              />
             ) : (
               <EmptyGallery generating={isGenerating} />
             )}
@@ -152,10 +206,10 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
             <ImageComposer
               prompt={prompt}
               onPromptChange={setPrompt}
-              references={refs.attachments}
-              onAddFiles={refs.add}
-              onRemoveReference={refs.remove}
-              onPaste={refs.onPaste}
+              references={references}
+              onAddFiles={localRefs.add}
+              onRemoveReference={removeReference}
+              onPaste={localRefs.onPaste}
               onSubmit={submit}
               isGenerating={isGenerating}
             />

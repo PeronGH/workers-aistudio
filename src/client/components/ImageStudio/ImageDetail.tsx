@@ -1,4 +1,5 @@
-import { Text } from "@cloudflare/kumo";
+import { Button, Text } from "@cloudflare/kumo";
+import { ArrowBendUpLeftIcon } from "@phosphor-icons/react";
 import {
   IMAGE_MODEL_LABELS,
   type ImageGenerationEntry
@@ -7,9 +8,10 @@ import { formatRelative } from "../../utils/relativeTime";
 
 interface ImageDetailProps {
   entry: ImageGenerationEntry;
+  onUseAsReference: (id: string) => void;
 }
 
-export function ImageDetail({ entry }: ImageDetailProps) {
+export function ImageDetail({ entry, onUseAsReference }: ImageDetailProps) {
   return (
     <div className="max-w-4xl mx-auto w-full px-5 py-6 space-y-5">
       <div className="rounded-xl border border-kumo-line bg-kumo-base overflow-hidden">
@@ -18,6 +20,16 @@ export function ImageDetail({ entry }: ImageDetailProps) {
           alt={entry.prompt}
           className="w-full h-auto bg-kumo-control"
         />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<ArrowBendUpLeftIcon size={14} />}
+          onClick={() => onUseAsReference(entry.id)}
+        >
+          Use as reference
+        </Button>
       </div>
       <section className="space-y-2">
         <div className="flex items-center gap-2 text-xs text-kumo-subtle">
@@ -34,26 +46,26 @@ export function ImageDetail({ entry }: ImageDetailProps) {
           {entry.prompt}
         </p>
       </section>
-      {entry.referenceKeys.length > 0 && (
+      {entry.referenceIds.length > 0 && (
         <section className="space-y-2">
           <Text size="xs" bold variant="secondary">
             References
           </Text>
           <div className="flex gap-2 flex-wrap">
-            {entry.referenceKeys.map((key) => (
-              <a
-                key={key}
-                href={`/api/upload/${key}`}
-                target="_blank"
-                rel="noreferrer"
-                className="block h-20 w-20 rounded-md border border-kumo-line overflow-hidden bg-kumo-control"
+            {entry.referenceIds.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onUseAsReference(id)}
+                aria-label="Use this reference again"
+                className="block h-20 w-20 rounded-md border border-kumo-line overflow-hidden bg-kumo-control hover:ring-2 hover:ring-kumo-ring transition-shadow"
               >
                 <img
-                  src={`/api/upload/${key}`}
+                  src={`/api/images/${id}`}
                   alt="reference"
                   className="h-full w-full object-cover"
                 />
-              </a>
+              </button>
             ))}
           </div>
         </section>
