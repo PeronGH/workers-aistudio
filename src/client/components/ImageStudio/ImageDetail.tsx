@@ -1,4 +1,4 @@
-import { Button, Text } from "@cloudflare/kumo";
+import { Badge, Button, Text } from "@cloudflare/kumo";
 import { ArrowBendUpLeftIcon } from "@phosphor-icons/react";
 import {
   IMAGE_MODEL_LABELS,
@@ -23,9 +23,7 @@ export function ImageDetail({ entry, onUseAsReference }: ImageDetailProps) {
       />
       <section className="space-y-2">
         <div className="flex items-center gap-2 text-xs text-kumo-subtle">
-          <span className="px-2 py-0.5 rounded-full bg-kumo-control border border-kumo-line">
-            {IMAGE_MODEL_LABELS[entry.model]}
-          </span>
+          <Badge variant="outline">{IMAGE_MODEL_LABELS[entry.model]}</Badge>
           <span>
             {entry.width}×{entry.height}
           </span>

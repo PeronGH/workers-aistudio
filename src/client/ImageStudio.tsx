@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Button, Text } from "@cloudflare/kumo";
+import { Button } from "@cloudflare/kumo";
+import { Empty } from "@cloudflare/kumo/components/empty";
 import {
   ImageSquareIcon,
   ListIcon,
@@ -229,13 +230,14 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
 
 function EmptyGallery({ generating }: { generating: boolean }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-6 gap-3 text-kumo-subtle">
-      <ImageSquareIcon size={36} />
-      <Text size="sm" variant="secondary">
-        {generating
-          ? "Generating your image…"
-          : "Type a prompt below to create an image."}
-      </Text>
+    <div className="h-full flex items-center justify-center">
+      <Empty
+        icon={<ImageSquareIcon size={36} />}
+        title={generating ? "Generating your image…" : "Nothing here yet"}
+        description={
+          generating ? undefined : "Type a prompt below to create an image."
+        }
+      />
     </div>
   );
 }
