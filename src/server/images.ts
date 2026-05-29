@@ -107,3 +107,39 @@ function base64ToBytes(b64: string): Uint8Array {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+/** Extract the upload id from a stored image URL (`/api/images/{id}`). */
+export function uploadIdFromUrl(url: string): string | null {
+  try {
+    const { pathname } = new URL(url, "http://local");
+    const match = pathname.match(/\/api\/images\/([^/]+)$/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read an upload from R2 and inline it as a base64 data URI. The Workers AI
+ * backend cannot fetch our image URLs (the Worker sits behind Cloudflare
+ * Access), so vision models must receive the bytes inline.
+ */
+export async function uploadIdToDataUrl(
+  env: Env,
+  id: string
+): Promise<string | null> {
+  const object = await env.UPLOADS.get(PREFIX + id);
+  if (!object) return null;
+  const contentType = object.httpMetadata?.contentType ?? "image/png";
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  return `data:${contentType};base64,${bytesToBase64(bytes)}`;
+}

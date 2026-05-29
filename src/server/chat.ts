@@ -8,6 +8,7 @@ import {
   RunSettingsSchema,
   type RunSettings
 } from "../shared/settings";
+import { uploadIdFromUrl, uploadIdToDataUrl } from "./images";
 
 const MODEL = "@cf/moonshotai/kimi-k2.6";
 const MAX_COMPLETION_TOKENS = 98304;
@@ -22,9 +23,15 @@ export const chatRoutes = new Hono<{ Bindings: Env }>().post(
   zValidator("json", ChatRequestSchema),
   async (c) => {
     const { messages, settings = {} } = c.req.valid("json");
+    let resolved: ChatMessage[];
+    try {
+      resolved = await resolveImageContent(messages, c.env);
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 400);
+    }
     const upstream = await c.env.AI.run(
       MODEL,
-      buildPayload(messages, settings),
+      buildPayload(resolved, settings),
       {
         returnRawResponse: true,
         extraHeaders: { "x-session-affinity": "wai-studio" }
@@ -39,6 +46,35 @@ export const chatRoutes = new Hono<{ Bindings: Env }>().post(
     });
   }
 );
+
+/**
+ * Replace stored image URLs with inline base64 data URIs. Data URIs (anonymous
+ * mode) pass through untouched; everything else is read from R2 by id. This
+ * runs on every send — including retry/edit replays of saved conversations,
+ * whose messages also carry URLs.
+ */
+async function resolveImageContent(
+  messages: ChatMessage[],
+  env: Env
+): Promise<ChatMessage[]> {
+  return Promise.all(
+    messages.map(async (m) => {
+      if (m.role !== "user" || typeof m.content === "string") return m;
+      const content = await Promise.all(
+        m.content.map(async (part) => {
+          if (part.type !== "image_url") return part;
+          const url = part.image_url.url;
+          if (url.startsWith("data:")) return part;
+          const id = uploadIdFromUrl(url);
+          const dataUrl = id ? await uploadIdToDataUrl(env, id) : null;
+          if (!dataUrl) throw new Error(`Image not found: ${url}`);
+          return { ...part, image_url: { ...part.image_url, url: dataUrl } };
+        })
+      );
+      return { ...m, content };
+    })
+  );
+}
 
 function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   const resolved = resolveSampling(settings);
