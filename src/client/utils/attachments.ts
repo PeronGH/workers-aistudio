@@ -1,8 +1,18 @@
+export interface AttachmentUpload {
+  url: string;
+  mediaType: string;
+}
+
+export type AttachmentStatus = "uploading" | "ready" | "error";
+
 export interface Attachment {
   id: string;
   file: File;
   preview: string;
-  mediaType: string;
+  status: AttachmentStatus;
+  /** Send payload, populated once the upload (or data-URL encode) resolves. */
+  result?: AttachmentUpload;
+  error?: string;
 }
 
 export function createAttachment(file: File): Attachment {
@@ -10,7 +20,7 @@ export function createAttachment(file: File): Attachment {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     file,
     preview: URL.createObjectURL(file),
-    mediaType: file.type || "application/octet-stream"
+    status: "uploading"
   };
 }
 

@@ -7,7 +7,7 @@ import { useAttachments } from "./hooks/useAttachments";
 import {
   imageToDataUrl,
   uploadImage,
-  type Attachment
+  type AttachmentUpload
 } from "./utils/attachments";
 import { api } from "./utils/api";
 import type { UiMessage } from "../shared/messages";
@@ -69,7 +69,17 @@ export function Chat({
     (loaded) => replace(loaded.settings),
     !anonymousMode
   );
-  const att = useAttachments();
+  const uploadAttachment = useCallback(
+    async (file: File): Promise<AttachmentUpload> => ({
+      // Anonymous chats never touch the server: encode inline instead.
+      url: anonymousMode
+        ? await imageToDataUrl(file)
+        : (await uploadImage(file)).url,
+      mediaType: file.type || "application/octet-stream"
+    }),
+    [anonymousMode]
+  );
+  const att = useAttachments(uploadAttachment);
 
   const updateSettings = useCallback(
     (patch: Partial<RunSettings>) => {
@@ -144,9 +154,13 @@ export function Chat({
 
   const submit = useCallback(async () => {
     const text = input.trim();
-    if ((!text && att.attachments.length === 0) || isStreaming) return;
+    // `att.ready` also blocks the Enter key, which bypasses the button's
+    // disabled state, until every attachment has finished uploading.
+    if ((!text && att.attachments.length === 0) || isStreaming || !att.ready) {
+      return;
+    }
 
-    const images = await materializeImages(att.attachments, anonymousMode);
+    const images = att.materialize();
 
     let uuid = effectiveActiveUuid;
     if (!anonymousMode && !uuid) {
@@ -337,6 +351,7 @@ export function Chat({
                 onSubmit={submit}
                 onStop={stop}
                 isStreaming={isStreaming}
+                attachmentsReady={att.ready}
                 transcriptionLanguage={localSettings.transcriptionLanguage}
               />
             )}
@@ -357,20 +372,6 @@ export function Chat({
         onReset={resetSettings}
       />
     </div>
-  );
-}
-
-async function materializeImages(
-  attachments: Attachment[],
-  anonymousMode: boolean
-): Promise<{ url: string; mediaType: string }[]> {
-  return Promise.all(
-    attachments.map(async (a) => ({
-      url: anonymousMode
-        ? await imageToDataUrl(a.file)
-        : (await uploadImage(a.file)).url,
-      mediaType: a.mediaType
-    }))
   );
 }
 

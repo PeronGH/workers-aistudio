@@ -20,6 +20,7 @@ interface ComposerProps {
   onSubmit: () => void;
   onStop: () => void;
   isStreaming: boolean;
+  attachmentsReady: boolean;
   transcriptionLanguage: string | undefined;
 }
 
@@ -33,6 +34,7 @@ export function Composer({
   onSubmit,
   onStop,
   isStreaming,
+  attachmentsReady,
   transcriptionLanguage
 }: ComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,19 @@ export function Composer({
                 alt={att.file.name}
                 className="h-16 w-16 object-cover"
               />
+              {att.status !== "ready" && (
+                <div
+                  className={`absolute inset-0 flex items-center justify-center ${
+                    att.status === "error" ? "bg-kumo-danger/30" : "bg-black/40"
+                  }`}
+                >
+                  {att.status === "error" ? (
+                    <XIcon size={18} className="text-kumo-danger" />
+                  ) : (
+                    <Loader size="sm" />
+                  )}
+                </div>
+              )}
               <Button
                 variant="secondary"
                 shape="circle"
@@ -164,7 +179,9 @@ export function Composer({
             variant="primary"
             shape="square"
             aria-label="Send message"
-            disabled={!input.trim() && attachments.length === 0}
+            disabled={
+              (!input.trim() && attachments.length === 0) || !attachmentsReady
+            }
             icon={<PaperPlaneRightIcon size={18} />}
             className="mb-0.5"
           />

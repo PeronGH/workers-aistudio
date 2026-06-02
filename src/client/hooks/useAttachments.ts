@@ -1,14 +1,44 @@
-import { useCallback, useState } from "react";
-import { createAttachment, type Attachment } from "../utils/attachments";
+import { useCallback, useRef, useState } from "react";
+import {
+  createAttachment,
+  type Attachment,
+  type AttachmentUpload
+} from "../utils/attachments";
+import { toastError } from "../utils/toast";
 
-export function useAttachments() {
+export type AttachmentUploader = (file: File) => Promise<AttachmentUpload>;
+
+export function useAttachments(uploader: AttachmentUploader) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  // Always upload with the latest strategy (the uploader changes with mode).
+  const uploaderRef = useRef(uploader);
+  uploaderRef.current = uploader;
 
   const add = useCallback((files: FileList | File[]) => {
     const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (images.length === 0) return;
-    setAttachments((prev) => [...prev, ...images.map(createAttachment)]);
+    const created = images.map(createAttachment);
+    setAttachments((prev) => [...prev, ...created]);
+    for (const att of created) {
+      uploaderRef.current(att.file).then(
+        (result) =>
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === att.id ? { ...a, status: "ready", result } : a
+            )
+          ),
+        (err: unknown) => {
+          const message = (err as Error).message;
+          toastError("Image upload failed", message);
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === att.id ? { ...a, status: "error", error: message } : a
+            )
+          );
+        }
+      );
+    }
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -67,9 +97,19 @@ export function useAttachments() {
     [add]
   );
 
+  // Empty is ready; otherwise every attachment must have finished uploading.
+  const ready = attachments.every((a) => a.status === "ready");
+  const materialize = useCallback(
+    (): AttachmentUpload[] =>
+      attachments.flatMap((a) => (a.result ? [a.result] : [])),
+    [attachments]
+  );
+
   return {
     attachments,
     isDragging,
+    ready,
+    materialize,
     add,
     remove,
     clear,
