@@ -107,7 +107,7 @@ function ChatRow({
         onClick={() => {
           if (confirm(`Delete "${title}"?`)) onDelete();
         }}
-        className="opacity-0 group-hover:opacity-100 text-kumo-inactive hover:text-kumo-danger transition-opacity"
+        className="reveal-on-hover text-kumo-inactive hover:text-kumo-danger"
       />
     </li>
   );

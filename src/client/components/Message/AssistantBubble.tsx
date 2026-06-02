@@ -82,7 +82,7 @@ export function AssistantBubble({
               size="xs"
               icon={<ArrowClockwiseIcon size={12} />}
               onClick={() => onRetry(nodeId)}
-              className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+              className="text-kumo-subtle reveal-on-hover"
             >
               Retry
             </Button>

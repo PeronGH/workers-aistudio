@@ -14,7 +14,7 @@ export default function App() {
     <Toasty toastManager={toastManager}>
       <Suspense
         fallback={
-          <div className="flex items-center justify-center h-screen text-kumo-inactive">
+          <div className="flex items-center justify-center h-dvh text-kumo-inactive">
             Loading...
           </div>
         }

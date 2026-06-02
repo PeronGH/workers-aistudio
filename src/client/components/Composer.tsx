@@ -102,7 +102,7 @@ export function Composer({
                 aria-label={`Remove ${att.file.name}`}
                 icon={<XIcon size={10} />}
                 onClick={() => onRemoveAttachment(att.id)}
-                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0.5 right-0.5 reveal-on-hover"
               />
             </div>
           ))}

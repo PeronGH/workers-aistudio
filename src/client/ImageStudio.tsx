@@ -108,7 +108,7 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
 
   return (
     <div
-      className="flex h-screen bg-kumo-elevated"
+      className="flex h-dvh bg-kumo-elevated"
       onDragOver={onDragOver}
       onDrop={onDrop}
     >

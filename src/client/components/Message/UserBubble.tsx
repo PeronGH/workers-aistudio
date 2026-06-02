@@ -58,7 +58,7 @@ export function UserBubble({
               size="xs"
               icon={<PencilSimpleIcon size={12} />}
               onClick={() => setEditing(true)}
-              className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+              className="text-kumo-subtle reveal-on-hover"
             >
               Edit
             </Button>

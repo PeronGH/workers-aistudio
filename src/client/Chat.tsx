@@ -283,7 +283,7 @@ export function Chat({
 
   return (
     <div
-      className="flex h-screen bg-kumo-elevated"
+      className="flex h-dvh bg-kumo-elevated"
       onDragOver={att.onDragOver}
       onDragLeave={att.onDragLeave}
       onDrop={att.onDrop}

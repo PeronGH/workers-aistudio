@@ -19,7 +19,7 @@ export function CopyButton({ text }: { text: string }) {
         }
       }}
       aria-label="Copy message"
-      className="text-kumo-subtle opacity-0 group-hover:opacity-100 transition-opacity"
+      className="text-kumo-subtle reveal-on-hover"
     >
       {copied ? "Copied" : "Copy"}
     </Button>

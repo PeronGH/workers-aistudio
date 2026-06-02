@@ -8,6 +8,32 @@ html,
 body,
 #root {
   width: 100%;
-  height: 100%;
+  /* Dynamic viewport height tracks the visible area as mobile browser
+     toolbars (e.g. Firefox Android's bottom bar) show and hide, so the
+     composer never ends up underneath them. */
+  height: 100dvh;
   margin: 0;
+}
+
+body {
+  /* The app shell owns its own scrolling; keep the page itself fixed so
+     it can't scroll the toolbar in/out and shift the layout. */
+  overflow: hidden;
+}
+
+/* Action buttons reveal on hover only where hovering is actually possible.
+   On touch devices (no hover) they stay visible so they remain reachable. */
+.reveal-on-hover {
+  transition: opacity 150ms ease;
+}
+
+@media (hover: hover) {
+  .reveal-on-hover {
+    opacity: 0;
+  }
+
+  .group:hover .reveal-on-hover,
+  .reveal-on-hover:focus-visible {
+    opacity: 1;
+  }
 }
