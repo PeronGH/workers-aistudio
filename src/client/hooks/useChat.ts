@@ -50,6 +50,12 @@ export function useChat(
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // Synchronous re-entrancy lock. `isStreaming` is React state, so it only
+  // reflects a running stream after the next render — too late to block a
+  // second send dispatched in the same tick (double Enter, or a send fired
+  // while images are still uploading). This ref flips synchronously, before
+  // any await, so concurrent entries see it immediately.
+  const streamingRef = useRef(false);
   const stateRef = useRef<ConversationState>(state);
   const localUuidsRef = useRef<Set<string>>(new Set());
   const onLoadedRef = useRef(onLoaded);
@@ -71,6 +77,7 @@ export function useChat(
 
     abortRef.current?.abort();
     abortRef.current = null;
+    streamingRef.current = false;
     setIsStreaming(false);
 
     if (!persist) {
@@ -117,12 +124,14 @@ export function useChat(
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
+    streamingRef.current = false;
     setIsStreaming(false);
   }, []);
 
   const resetChat = useCallback((settings?: RunSettings) => {
     abortRef.current?.abort();
     abortRef.current = null;
+    streamingRef.current = false;
     setIsStreaming(false);
     setIsLoading(false);
     setState(emptyState(settings));
@@ -131,6 +140,7 @@ export function useChat(
   const replaceChat = useCallback((next: ConversationState) => {
     abortRef.current?.abort();
     abortRef.current = null;
+    streamingRef.current = false;
     setIsStreaming(false);
     setIsLoading(false);
     setState(cloneState(next));
@@ -146,6 +156,7 @@ export function useChat(
     ): Promise<boolean> => {
       const controller = new AbortController();
       abortRef.current = controller;
+      streamingRef.current = true;
       setIsStreaming(true);
 
       let content = "";
@@ -207,6 +218,7 @@ export function useChat(
         }
       } finally {
         abortRef.current = null;
+        streamingRef.current = false;
         setIsStreaming(false);
       }
 
@@ -222,7 +234,7 @@ export function useChat(
 
   const send = useCallback(
     async ({ uuid, text, images, settings }: SendArgs): Promise<boolean> => {
-      if (isStreaming) return false;
+      if (streamingRef.current) return false;
 
       const path = pathFromTree(stateRef.current);
       const leafId = path.length ? path[path.length - 1].node.id : null;
@@ -266,7 +278,7 @@ export function useChat(
       const apiNodes = [...pathToNode(withUser, userId)];
       return stream(uuid, apiNodes, assistantId, settings);
     },
-    [isStreaming, stream]
+    [stream]
   );
 
   const retry = useCallback(
@@ -275,7 +287,7 @@ export function useChat(
       assistantNodeId: string,
       settings: RunSettings
     ): Promise<boolean> => {
-      if (isStreaming) return false;
+      if (streamingRef.current) return false;
       const current = stateRef.current;
       const original = current.nodes[assistantNodeId];
       if (!original || original.message.role !== "assistant") return false;
@@ -302,12 +314,12 @@ export function useChat(
       const apiNodes = pathToNode(next, parentUserId);
       return stream(uuid, apiNodes, newAssistantId, settings);
     },
-    [isStreaming, stream]
+    [stream]
   );
 
   const editUser = useCallback(
     async ({ uuid, nodeId, text, settings }: EditArgs): Promise<boolean> => {
-      if (isStreaming) return false;
+      if (streamingRef.current) return false;
       const current = stateRef.current;
       const original = current.nodes[nodeId];
       if (!original || original.message.role !== "user") return false;
@@ -350,7 +362,7 @@ export function useChat(
       const apiNodes = pathToNode(withUser, newUserId);
       return stream(uuid, apiNodes, assistantId, settings);
     },
-    [isStreaming, stream]
+    [stream]
   );
 
   const selectSibling = useCallback(
