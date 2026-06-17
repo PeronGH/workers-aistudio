@@ -5,8 +5,18 @@ export const TOP_P_RANGE = { min: 0, max: 1, step: 0.01 } as const;
 export const PRESETS = ["thinking", "instant", "manual"] as const;
 export const DEFAULT_PRESET: Preset = "thinking";
 
+export const MODELS = [
+  { id: "@cf/moonshotai/kimi-k2.6", label: "Kimi K2.6" },
+  { id: "@cf/moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
+  { id: "@cf/zai-org/glm-5.2", label: "GLM-5.2" }
+] as const;
+
+export type ModelId = (typeof MODELS)[number]["id"];
+export const DEFAULT_MODEL: ModelId = "@cf/moonshotai/kimi-k2.6";
+
 export const RunSettingsSchema = z
   .object({
+    model: z.enum(MODELS.map((m) => m.id) as [ModelId, ...ModelId[]]),
     preset: z.enum(PRESETS),
     systemPrompt: z.string(),
     temperature: z

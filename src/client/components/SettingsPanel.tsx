@@ -4,13 +4,16 @@ import { Toggle } from "@cloudflare/kumo/primitives/toggle";
 import { ToggleGroup } from "@cloudflare/kumo/primitives/toggle-group";
 import { XIcon } from "@phosphor-icons/react";
 import {
+  DEFAULT_MODEL,
   DEFAULT_PRESET,
+  MODELS,
   PRESETS,
   PRESET_VALUES,
   TEMPERATURE_RANGE,
   TOP_P_RANGE,
   TRANSCRIPTION_LANGUAGES,
   type LocalSettings,
+  type ModelId,
   type Preset,
   type RunSettings
 } from "../../shared/settings";
@@ -113,6 +116,11 @@ export function SettingsPanel({
                 Clear all
               </Button>
             </div>
+
+            <ModelField
+              value={settings.model}
+              onChange={(v) => onUpdate({ model: v })}
+            />
 
             <SystemPromptField
               value={settings.systemPrompt}
@@ -248,6 +256,35 @@ function PresetField({
     <section className="space-y-1.5">
       <Label>Preset</Label>
       <Segmented options={PRESETS} value={value} onChange={onChange} />
+    </section>
+  );
+}
+
+function ModelField({
+  value,
+  onChange
+}: {
+  value: ModelId | undefined;
+  onChange: (v: ModelId) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <Label>Model</Label>
+      <Select
+        size="sm"
+        aria-label="Model"
+        value={value ?? DEFAULT_MODEL}
+        onValueChange={(v) => {
+          if (typeof v === "string") onChange(v as ModelId);
+        }}
+        className="w-full"
+      >
+        {MODELS.map((m) => (
+          <Select.Option key={m.id} value={m.id}>
+            {m.label}
+          </Select.Option>
+        ))}
+      </Select>
     </section>
   );
 }

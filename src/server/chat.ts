@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { ChatMessageSchema, type ChatMessage } from "../shared/messages";
 import {
+  DEFAULT_MODEL,
   DEFAULT_PRESET,
   PRESET_VALUES,
   RunSettingsSchema,
@@ -10,7 +11,6 @@ import {
 } from "../shared/settings";
 import { uploadIdFromUrl, uploadIdToDataUrl } from "./images";
 
-const MODEL = "@cf/moonshotai/kimi-k2.6";
 const MAX_COMPLETION_TOKENS = 98304;
 
 export const ChatRequestSchema = z.object({
@@ -29,8 +29,9 @@ export const chatRoutes = new Hono<{ Bindings: Env }>().post(
     } catch (err) {
       return c.json({ error: (err as Error).message }, 400);
     }
+    const model = settings.model ?? DEFAULT_MODEL;
     const upstream = await c.env.AI.run(
-      MODEL,
+      model as keyof AiModels,
       buildPayload(resolved, settings),
       {
         returnRawResponse: true,
@@ -87,9 +88,16 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
   if (resolved.temperature !== undefined)
     out.temperature = resolved.temperature;
   if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
-  if (resolved.thinking === false) {
-    out.chat_template_kwargs = { thinking: false };
-  }
+
+  // Different model chat templates read different thinking flags, so set every
+  // knob together (see workers-ai-proxy). preserve/clear are inverse.
+  const thinking = resolved.thinking !== false;
+  out.chat_template_kwargs = {
+    thinking,
+    enable_thinking: thinking,
+    preserve_thinking: true,
+    clear_thinking: false
+  };
 
   return out;
 }
