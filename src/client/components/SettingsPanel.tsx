@@ -31,11 +31,11 @@ import { useTheme } from "../hooks/useTheme";
 
 interface SettingsPanelProps {
   settings: RunSettings;
-  localSettings: LocalSettings;
+  localSettings?: LocalSettings;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
-  onUpdateLocal: (patch: Partial<LocalSettings>) => void;
+  onUpdateLocal?: (patch: Partial<LocalSettings>) => void;
   onReset: () => void;
   showDebug?: boolean;
   onToggleDebug?: (v: boolean) => void;
@@ -96,10 +96,12 @@ export function SettingsPanel({
             <Text size="sm" bold>
               General
             </Text>
-            <TranscriptionLanguageField
-              value={localSettings.transcriptionLanguage}
-              onChange={(v) => onUpdateLocal({ transcriptionLanguage: v })}
-            />
+            {localSettings && onUpdateLocal && (
+              <TranscriptionLanguageField
+                value={localSettings.transcriptionLanguage}
+                onChange={(v) => onUpdateLocal({ transcriptionLanguage: v })}
+              />
+            )}
             <ToggleRow
               label="Dark mode"
               checked={dark}

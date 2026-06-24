@@ -9,7 +9,6 @@ import {
 } from "@phosphor-icons/react";
 import { useCompletion } from "./hooks/useCompletion";
 import { useRunSettings } from "./hooks/useRunSettings";
-import { useLocalSettings } from "./hooks/useLocalSettings";
 import { Sidebar, type SidebarMode } from "./components/Sidebar";
 import { SettingsPanel } from "./components/SettingsPanel";
 
@@ -26,7 +25,6 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
     update: updateSettings,
     reset: resetSettings
   } = useRunSettings();
-  const { settings: localSettings, update: updateLocal } = useLocalSettings();
   const { text, setText, generate, stop, isStreaming } = useCompletion();
 
   const handleGenerate = useCallback(
@@ -150,11 +148,9 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
       </div>
       <SettingsPanel
         settings={settings}
-        localSettings={localSettings}
         drawerOpen={settingsOpen}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={updateSettings}
-        onUpdateLocal={updateLocal}
         onReset={resetSettings}
         showCompletionSettings
         onApplyTemplate={setText}
