@@ -5,19 +5,7 @@ const INDEX_KEY = "wai-studio:playground";
 const CONTENT_PREFIX = "wai-studio:playground:";
 
 export function usePlaygroundStore() {
-  const { index, add, remove, update } = useLocalIndex(INDEX_KEY);
-
-  const save = useCallback(
-    (uuid: string, text: string) => {
-      try {
-        localStorage.setItem(CONTENT_PREFIX + uuid, text);
-      } catch {
-        /* quota — ignore */
-      }
-      update(uuid, deriveTitle(text));
-    },
-    [update]
-  );
+  const { index, add, remove } = useLocalIndex(INDEX_KEY);
 
   const load = useCallback((uuid: string): string => {
     try {
@@ -53,7 +41,7 @@ export function usePlaygroundStore() {
     [remove]
   );
 
-  return { index, create, save, load, del };
+  return { index, create, load, del };
 }
 
 const TITLE_MAX = 40;

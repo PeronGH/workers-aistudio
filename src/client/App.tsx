@@ -18,7 +18,7 @@ export default function App() {
 
   const handleSelectMode = (mode: SidebarMode) => {
     if (mode === "images") navigate({ kind: "images" });
-    else if (mode === "playground") navigate({ kind: "playground", id: null });
+    else if (mode === "playground") navigate({ kind: "playground" });
     else navigate({ kind: "chat", uuid: null });
   };
 
@@ -34,11 +34,7 @@ export default function App() {
         {view.kind === "images" ? (
           <ImageStudio onSelectMode={handleSelectMode} />
         ) : view.kind === "playground" ? (
-          <Playground
-            activeId={view.id}
-            onNavigate={(id) => navigate({ kind: "playground", id })}
-            onSelectMode={handleSelectMode}
-          />
+          <Playground onSelectMode={handleSelectMode} />
         ) : (
           <Chat
             activeUuid={view.uuid}

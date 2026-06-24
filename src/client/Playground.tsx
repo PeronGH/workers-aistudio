@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button, InputArea, Text } from "@cloudflare/kumo";
 import {
   CursorTextIcon,
@@ -17,16 +17,10 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { toastSuccess } from "./utils/toast";
 
 interface PlaygroundProps {
-  activeId: string | null;
-  onNavigate: (id: string | null) => void;
   onSelectMode: (mode: SidebarMode) => void;
 }
 
-export function Playground({
-  activeId,
-  onNavigate,
-  onSelectMode
-}: PlaygroundProps) {
+export function Playground({ onSelectMode }: PlaygroundProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -39,19 +33,9 @@ export function Playground({
   const {
     index: storeIndex,
     create: storeCreate,
-    save: storeSave,
     load: storeLoad,
     del: storeDel
   } = usePlaygroundStore();
-
-  // Load text when activeId changes
-  useEffect(() => {
-    if (activeId) {
-      setText(storeLoad(activeId));
-    } else {
-      setText("");
-    }
-  }, [activeId, storeLoad, setText]);
 
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
@@ -71,34 +55,28 @@ export function Playground({
 
   const handleSave = useCallback(() => {
     if (!text) return;
-    if (activeId) {
-      storeSave(activeId, text);
-    } else {
-      const id = storeCreate(text);
-      onNavigate(id);
-    }
+    storeCreate(text);
     toastSuccess("Saved.");
-  }, [text, activeId, storeSave, storeCreate, onNavigate]);
+  }, [text, storeCreate]);
 
   const handleNew = useCallback(() => {
-    onNavigate(null);
+    setText("");
     setDrawerOpen(false);
-  }, [onNavigate]);
+  }, [setText]);
 
   const handleSelect = useCallback(
     (id: string) => {
-      onNavigate(id);
+      setText(storeLoad(id));
       setDrawerOpen(false);
     },
-    [onNavigate]
+    [storeLoad, setText]
   );
 
   const handleDelete = useCallback(
     (id: string) => {
       storeDel(id);
-      if (activeId === id) onNavigate(null);
     },
-    [activeId, storeDel, onNavigate]
+    [storeDel]
   );
 
   return (
@@ -111,7 +89,7 @@ export function Playground({
       >
         <SidebarList
           entries={storeIndex}
-          activeId={activeId}
+          activeId={null}
           icon={TerminalWindowIcon}
           emptyLabel="No saved prompts."
           newLabel="New prompt"
