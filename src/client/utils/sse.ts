@@ -1,8 +1,21 @@
-export interface SseEvent {
+export async function* streamJsonEvents<T>(
+  stream: ReadableStream<BufferSource>
+): AsyncGenerator<T> {
+  for await (const event of parseSseFrames(stream)) {
+    if (event.data === "[DONE]") return;
+    try {
+      yield JSON.parse(event.data) as T;
+    } catch {
+      // skip malformed frames
+    }
+  }
+}
+
+interface SseEvent {
   data: string;
 }
 
-export async function* parseSseStream(
+async function* parseSseFrames(
   stream: ReadableStream<BufferSource>
 ): AsyncGenerator<SseEvent> {
   const reader = stream.pipeThrough(new TextDecoderStream()).getReader();

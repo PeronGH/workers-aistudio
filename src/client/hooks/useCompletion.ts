@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { RunSettings } from "../../shared/settings";
-import { parseSseStream } from "../utils/sse";
+import { streamJsonEvents } from "../utils/sse";
 import { api } from "../utils/api";
 import { toastError } from "../utils/toast";
 
@@ -52,14 +52,7 @@ export function useCompletion() {
           const body = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
         }
-        for await (const event of parseSseStream(res.body)) {
-          if (event.data === "[DONE]") break;
-          let delta: CompletionDelta;
-          try {
-            delta = JSON.parse(event.data);
-          } catch {
-            continue;
-          }
+        for await (const delta of streamJsonEvents<CompletionDelta>(res.body)) {
           const piece = delta.choices?.[0]?.text ?? "";
           if (!piece) continue;
           generated += piece;

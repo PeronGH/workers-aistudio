@@ -17,7 +17,7 @@ import {
   type PathEntry
 } from "../../shared/conversations";
 import type { RunSettings } from "../../shared/settings";
-import { parseSseStream } from "../utils/sse";
+import { streamJsonEvents } from "../utils/sse";
 import { api } from "../utils/api";
 import { toastError } from "../utils/toast";
 
@@ -175,17 +175,7 @@ export function useChat(
           const body = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status}: ${body || res.statusText}`);
         }
-        for await (const event of parseSseStream(res.body)) {
-          if (event.data === "[DONE]") {
-            completedNaturally = true;
-            break;
-          }
-          let delta: ChatDelta;
-          try {
-            delta = JSON.parse(event.data);
-          } catch {
-            continue;
-          }
+        for await (const delta of streamJsonEvents<ChatDelta>(res.body)) {
           const piece = delta.choices?.[0]?.delta;
           if (!piece) continue;
           const c = piece.content ?? "";
@@ -212,6 +202,7 @@ export function useChat(
             };
           });
         }
+        completedNaturally = true;
       } catch (err) {
         if ((err as { name?: string }).name !== "AbortError") {
           toastError("Send failed", (err as Error).message);
