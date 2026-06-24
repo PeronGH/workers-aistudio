@@ -366,11 +366,10 @@ export function Chat({
         onUpdate={updateSettings}
         onUpdateLocal={updateLocal}
         onReset={resetSettings}
-        debug={{ show: showDebug, onToggle: setShowDebug }}
-        forcePush={{
-          enabled: effectiveActiveUuid !== null && !isShared,
-          onPush: forcePush
-        }}
+        showDebug={showDebug}
+        onToggleDebug={setShowDebug}
+        canForcePush={effectiveActiveUuid !== null && !isShared}
+        onForcePush={forcePush}
         showSystemPrompt
         showThinking
       />

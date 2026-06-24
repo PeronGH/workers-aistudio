@@ -37,8 +37,10 @@ interface SettingsPanelProps {
   onUpdate: (patch: Partial<RunSettings>) => void;
   onUpdateLocal: (patch: Partial<LocalSettings>) => void;
   onReset: () => void;
-  debug?: { show: boolean; onToggle: (v: boolean) => void };
-  forcePush?: { enabled: boolean; onPush: () => void };
+  showDebug?: boolean;
+  onToggleDebug?: (v: boolean) => void;
+  canForcePush?: boolean;
+  onForcePush?: () => void;
   showSystemPrompt?: boolean;
   showThinking?: boolean;
   showCompletionSettings?: boolean;
@@ -53,8 +55,10 @@ export function SettingsPanel({
   onUpdate,
   onUpdateLocal,
   onReset,
-  debug,
-  forcePush,
+  showDebug,
+  onToggleDebug,
+  canForcePush,
+  onForcePush,
   showSystemPrompt,
   showThinking,
   showCompletionSettings,
@@ -102,22 +106,22 @@ export function SettingsPanel({
               onCheckedChange={toggleTheme}
               ariaLabel="Toggle dark mode"
             />
-            {debug && (
+            {onToggleDebug && (
               <ToggleRow
                 label="Debug mode"
-                checked={debug.show}
-                onCheckedChange={debug.onToggle}
+                checked={showDebug ?? false}
+                onCheckedChange={onToggleDebug}
                 ariaLabel="Toggle debug mode"
               />
             )}
-            {forcePush && (
+            {onForcePush && (
               <section className="flex items-center justify-between">
                 <Label>Force push</Label>
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={!forcePush.enabled}
-                  onClick={forcePush.onPush}
+                  disabled={!canForcePush}
+                  onClick={onForcePush}
                 >
                   Push now
                 </Button>
