@@ -11,9 +11,9 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     label: "Kimi — basic",
     models: ["kimi"],
     build: () =>
-      "<|im_system|>system<|im_middle|>You are a helpful assistant.<|im_end|>" +
-      "<|im_user|>user<|im_middle|>Hello<|im_end|>" +
-      "<|im_assistant|>assistant<|im_middle|><think></think>"
+      "<|im_system|>system<|im_middle|>SYSTEM<|im_end|>" +
+      "<|im_user|>user<|im_middle|>USER<|im_end|>" +
+      "<|im_assistant|>assistant<|im_middle|><think>THINKING</think>"
   },
   {
     id: "glm-basic",
@@ -22,7 +22,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     build: () =>
       "[gMASK]<sop>" +
       "<|system|>Reasoning Effort: Max" +
-      "<|system|>You are a helpful assistant." +
-      "<|user|>Hello<|assistant|>\n<think></think>"
+      "<|system|>SYSTEM" +
+      "<|user|>USER<|assistant|>\n<think>THINKING</think>"
   }
 ];
