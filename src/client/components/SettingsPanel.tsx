@@ -26,6 +26,7 @@ import {
   type Preset,
   type RunSettings
 } from "../../shared/settings";
+import { PROMPT_TEMPLATES } from "../../shared/templates";
 import { useTheme } from "../hooks/useTheme";
 
 interface SettingsPanelProps {
@@ -35,6 +36,7 @@ interface SettingsPanelProps {
   showDebug: boolean;
   canForcePush: boolean;
   mode?: "chat" | "playground";
+  onApplyTemplate?: (text: string) => void;
   onToggleDebug: (next: boolean) => void;
   onForcePush: () => void;
   onCloseDrawer: () => void;
@@ -50,6 +52,7 @@ export function SettingsPanel({
   showDebug,
   canForcePush,
   mode = "chat",
+  onApplyTemplate,
   onToggleDebug,
   onForcePush,
   onCloseDrawer,
@@ -163,6 +166,25 @@ export function SettingsPanel({
               </>
             )}
           </section>
+
+          {mode === "playground" && onApplyTemplate && (
+            <section className="space-y-3">
+              <Text size="sm" bold>
+                Templates
+              </Text>
+              {PROMPT_TEMPLATES.map((t) => (
+                <Button
+                  key={t.id}
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onApplyTemplate(t.build())}
+                  className="w-full justify-start"
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </section>
+          )}
         </div>
       </aside>
     </>

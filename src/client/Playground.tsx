@@ -155,6 +155,7 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
         showDebug={false}
         canForcePush={false}
         mode="playground"
+        onApplyTemplate={setText}
         onToggleDebug={() => {}}
         onForcePush={() => {}}
         onCloseDrawer={() => setSettingsOpen(false)}
