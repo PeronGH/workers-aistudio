@@ -26,11 +26,10 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     id: "creative-writing",
     label: "Creative writing",
     build: () =>
-      `Tags:
+      `Rating:
+Language: English
+Words: 5000
 Kudos: 18500
-
----
-
-`
+Tags: `
   }
 ];
