@@ -2,11 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
-export type View = { kind: "chat"; uuid: string | null } | { kind: "images" };
+export type View =
+  | { kind: "chat"; uuid: string | null }
+  | { kind: "images" }
+  | { kind: "playground" };
 
 function parsePath(pathname: string): View {
   if (pathname === "/images" || pathname === "/images/") {
     return { kind: "images" };
+  }
+  if (pathname === "/playground" || pathname === "/playground/") {
+    return { kind: "playground" };
   }
   const match = pathname.match(/^\/conversation\/([^/]+)\/?$/);
   if (match && UUID_RE.test(match[1])) {
@@ -17,6 +23,7 @@ function parsePath(pathname: string): View {
 
 function pathFor(view: View): string {
   if (view.kind === "images") return "/images";
+  if (view.kind === "playground") return "/playground";
   return view.uuid ? `/conversation/${view.uuid}` : "/";
 }
 

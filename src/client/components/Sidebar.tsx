@@ -3,10 +3,11 @@ import { Button } from "@cloudflare/kumo";
 import {
   ChatCircleDotsIcon,
   ImageSquareIcon,
+  TerminalWindowIcon,
   XIcon
 } from "@phosphor-icons/react";
 
-export type SidebarMode = "chat" | "images";
+export type SidebarMode = "chat" | "images" | "playground";
 
 interface SidebarProps {
   mode: SidebarMode;
@@ -46,10 +47,16 @@ export function Sidebar({
             onClick={() => onSelectMode("chat")}
           />
           <ModeButton
-            label="Image Studio"
+            label="Images"
             icon={<ImageSquareIcon size={14} />}
             active={mode === "images"}
             onClick={() => onSelectMode("images")}
+          />
+          <ModeButton
+            label="Raw"
+            icon={<TerminalWindowIcon size={14} />}
+            active={mode === "playground"}
+            onClick={() => onSelectMode("playground")}
           />
           <Button
             variant="ghost"

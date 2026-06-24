@@ -7,7 +7,7 @@ import {
   PencilSimpleLineIcon,
   SlidersIcon
 } from "@phosphor-icons/react";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, type SidebarMode } from "./components/Sidebar";
 import { ImageSidebarList } from "./components/ImageStudio/ImageSidebarList";
 import { ImageComposer } from "./components/ImageStudio/ImageComposer";
 import { ImageDetail } from "./components/ImageStudio/ImageDetail";
@@ -19,10 +19,10 @@ import { MAX_REFERENCES } from "../shared/images";
 import { toastError, toastSuccess } from "./utils/toast";
 
 interface ImageStudioProps {
-  onLeaveImages: () => void;
+  onSelectMode: (mode: SidebarMode) => void;
 }
 
-export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
+export function ImageStudio({ onSelectMode }: ImageStudioProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export function ImageStudio({ onLeaveImages }: ImageStudioProps) {
         drawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
         onSelectMode={(m) => {
-          if (m === "chat") onLeaveImages();
+          if (m !== "images") onSelectMode(m);
         }}
       >
         <div className="px-3 py-2 border-b border-kumo-line">

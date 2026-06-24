@@ -25,6 +25,7 @@ interface SettingsPanelProps {
   drawerOpen: boolean;
   showDebug: boolean;
   canForcePush: boolean;
+  mode?: "chat" | "playground";
   onToggleDebug: (next: boolean) => void;
   onForcePush: () => void;
   onCloseDrawer: () => void;
@@ -39,6 +40,7 @@ export function SettingsPanel({
   drawerOpen,
   showDebug,
   canForcePush,
+  mode = "chat",
   onToggleDebug,
   onForcePush,
   onCloseDrawer,
@@ -122,12 +124,18 @@ export function SettingsPanel({
               onChange={(v) => onUpdate({ model: v })}
             />
 
-            <SystemPromptField
-              value={settings.systemPrompt}
-              onChange={(v) => onUpdate({ systemPrompt: v })}
-            />
+            {mode === "chat" && (
+              <SystemPromptField
+                value={settings.systemPrompt}
+                onChange={(v) => onUpdate({ systemPrompt: v })}
+              />
+            )}
 
-            <SamplingFields settings={settings} onUpdate={onUpdate} />
+            <SamplingFields
+              settings={settings}
+              onUpdate={onUpdate}
+              hideThinking={mode === "playground"}
+            />
           </section>
         </div>
       </aside>
@@ -137,10 +145,12 @@ export function SettingsPanel({
 
 function SamplingFields({
   settings,
-  onUpdate
+  onUpdate,
+  hideThinking
 }: {
   settings: RunSettings;
   onUpdate: (patch: Partial<RunSettings>) => void;
+  hideThinking?: boolean;
 }) {
   const preset = settings.preset ?? DEFAULT_PRESET;
   const isManual = preset === "manual";
@@ -167,11 +177,13 @@ function SamplingFields({
         disabled={!isManual}
         onChange={(v) => onUpdate({ top_p: v })}
       />
-      <SamplingThinkingField
-        value={thinking}
-        disabled={!isManual}
-        onChange={(v) => onUpdate({ thinking: v })}
-      />
+      {!hideThinking && (
+        <SamplingThinkingField
+          value={thinking}
+          disabled={!isManual}
+          onChange={(v) => onUpdate({ thinking: v })}
+        />
+      )}
     </>
   );
 }

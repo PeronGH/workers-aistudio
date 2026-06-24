@@ -16,7 +16,7 @@ import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, type SidebarMode } from "./components/Sidebar";
 import { ChatSidebarList } from "./components/ChatSidebarList";
 import { SharedFooter } from "./components/SharedFooter";
 import { withToast } from "./utils/toast";
@@ -26,13 +26,13 @@ const TITLE_MAX = 40;
 interface ChatProps {
   activeUuid: string | null;
   onNavigate: (uuid: string | null) => void;
-  onOpenImageStudio: () => void;
+  onSelectMode: (mode: SidebarMode) => void;
 }
 
 export function Chat({
   activeUuid,
   onNavigate: navigate,
-  onOpenImageStudio
+  onSelectMode
 }: ChatProps) {
   const [input, setInput] = useState("");
   const [showDebug, setShowDebug] = useState(false);
@@ -293,8 +293,8 @@ export function Chat({
         drawerOpen={drawerOpen}
         onCloseDrawer={() => setDrawerOpen(false)}
         onSelectMode={(m) => {
-          if (m === "images" && leaveAnonymousMode()) {
-            onOpenImageStudio();
+          if (m !== "chat" && leaveAnonymousMode()) {
+            onSelectMode(m);
           }
         }}
       >
