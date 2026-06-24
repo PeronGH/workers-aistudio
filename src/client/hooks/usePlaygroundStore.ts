@@ -17,15 +17,16 @@ export function usePlaygroundStore() {
 
   // Content-addressed: identical text dedupes to the same immutable entry.
   const create = useCallback(
-    async (text: string): Promise<string> => {
+    async (text: string): Promise<{ id: string; existed: boolean }> => {
       const id = await hashText(text);
+      const existed = localStorage.getItem(CONTENT_PREFIX + id) !== null;
       try {
         localStorage.setItem(CONTENT_PREFIX + id, text);
       } catch {
         /* quota — ignore */
       }
       add(id, deriveTitle(text));
-      return id;
+      return { id, existed };
     },
     [add]
   );

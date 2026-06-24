@@ -55,7 +55,9 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
 
   const handleSave = useCallback(() => {
     if (!text) return;
-    void storeCreate(text).then(() => toastSuccess("Saved."));
+    void storeCreate(text).then(({ existed }) =>
+      toastSuccess(existed ? "Already saved." : "Saved.")
+    );
   }, [text, storeCreate]);
 
   const handleNew = useCallback(() => {
