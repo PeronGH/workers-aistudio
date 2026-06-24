@@ -250,7 +250,7 @@ export function Chat({
     [anonymousMode, effectiveActiveUuid, selectSibling]
   );
 
-  const forcePush = useCallback(() => {
+  const handleSave = useCallback(() => {
     if (!effectiveActiveUuid || isShared) return;
     void withToast(
       api.api.conversations[":uuid"].$put({
@@ -258,9 +258,9 @@ export function Chat({
         json: { ...state, settings }
       }),
       {
-        loading: "Pushing conversation…",
-        success: "Pushed.",
-        errorTitle: "Push failed"
+        loading: "Saving…",
+        success: "Saved.",
+        errorTitle: "Save failed"
       }
     );
   }, [effectiveActiveUuid, isShared, state, settings]);
@@ -369,7 +369,7 @@ export function Chat({
         showDebug={showDebug}
         onToggleDebug={setShowDebug}
         canSave={effectiveActiveUuid !== null && !isShared}
-        onSave={forcePush}
+        onSave={handleSave}
         showSystemPrompt
         showThinking
       />
