@@ -23,21 +23,13 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       "<|user|>USER<|assistant|>\n<think>THINKING</think>"
   },
   {
-    id: "ao3-fic",
-    label: "AO3 fic",
+    id: "creative-writing",
+    label: "Creative writing",
     build: () =>
-      `Rating:
-Archive Warning:
-Category:
-Fandom:
-Relationship:
-Characters:
-Additional Tags:
-Language: English
-Stats: Kudos: 18500 Bookmarks: 4200 Hits: 380000
+      `Tags:
+Kudos: 18500
 
 ---
-Chapter 1
 
 `
   }
