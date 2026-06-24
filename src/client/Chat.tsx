@@ -362,14 +362,17 @@ export function Chat({
         settings={settings}
         localSettings={localSettings}
         drawerOpen={settingsOpen}
-        showDebug={showDebug}
-        canForcePush={effectiveActiveUuid !== null && !isShared}
-        onToggleDebug={setShowDebug}
-        onForcePush={forcePush}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={updateSettings}
         onUpdateLocal={updateLocal}
         onReset={resetSettings}
+        debug={{ show: showDebug, onToggle: setShowDebug }}
+        forcePush={{
+          enabled: effectiveActiveUuid !== null && !isShared,
+          onPush: forcePush
+        }}
+        showSystemPrompt
+        showThinking
       />
     </div>
   );

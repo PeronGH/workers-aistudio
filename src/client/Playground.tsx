@@ -152,16 +152,12 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
         settings={settings}
         localSettings={localSettings}
         drawerOpen={settingsOpen}
-        showDebug={false}
-        canForcePush={false}
-        mode="playground"
-        onApplyTemplate={setText}
-        onToggleDebug={() => {}}
-        onForcePush={() => {}}
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={updateSettings}
         onUpdateLocal={updateLocal}
         onReset={resetSettings}
+        showCompletionSettings
+        onApplyTemplate={setText}
       />
     </div>
   );

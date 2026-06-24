@@ -33,32 +33,32 @@ interface SettingsPanelProps {
   settings: RunSettings;
   localSettings: LocalSettings;
   drawerOpen: boolean;
-  showDebug: boolean;
-  canForcePush: boolean;
-  mode?: "chat" | "playground";
-  onApplyTemplate?: (text: string) => void;
-  onToggleDebug: (next: boolean) => void;
-  onForcePush: () => void;
   onCloseDrawer: () => void;
   onUpdate: (patch: Partial<RunSettings>) => void;
   onUpdateLocal: (patch: Partial<LocalSettings>) => void;
   onReset: () => void;
+  debug?: { show: boolean; onToggle: (v: boolean) => void };
+  forcePush?: { enabled: boolean; onPush: () => void };
+  showSystemPrompt?: boolean;
+  showThinking?: boolean;
+  showCompletionSettings?: boolean;
+  onApplyTemplate?: (text: string) => void;
 }
 
 export function SettingsPanel({
   settings,
   localSettings,
   drawerOpen,
-  showDebug,
-  canForcePush,
-  mode = "chat",
-  onApplyTemplate,
-  onToggleDebug,
-  onForcePush,
   onCloseDrawer,
   onUpdate,
   onUpdateLocal,
-  onReset
+  onReset,
+  debug,
+  forcePush,
+  showSystemPrompt,
+  showThinking,
+  showCompletionSettings,
+  onApplyTemplate
 }: SettingsPanelProps) {
   const { dark, toggle: toggleTheme } = useTheme();
   return (
@@ -102,26 +102,26 @@ export function SettingsPanel({
               onCheckedChange={toggleTheme}
               ariaLabel="Toggle dark mode"
             />
-            {mode === "chat" && (
-              <>
-                <ToggleRow
-                  label="Debug mode"
-                  checked={showDebug}
-                  onCheckedChange={onToggleDebug}
-                  ariaLabel="Toggle debug mode"
-                />
-                <section className="flex items-center justify-between">
-                  <Label>Force push</Label>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={!canForcePush}
-                    onClick={onForcePush}
-                  >
-                    Push now
-                  </Button>
-                </section>
-              </>
+            {debug && (
+              <ToggleRow
+                label="Debug mode"
+                checked={debug.show}
+                onCheckedChange={debug.onToggle}
+                ariaLabel="Toggle debug mode"
+              />
+            )}
+            {forcePush && (
+              <section className="flex items-center justify-between">
+                <Label>Force push</Label>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!forcePush.enabled}
+                  onClick={forcePush.onPush}
+                >
+                  Push now
+                </Button>
+              </section>
             )}
           </section>
 
@@ -140,7 +140,7 @@ export function SettingsPanel({
               onChange={(v) => onUpdate({ model: v })}
             />
 
-            {mode === "chat" && (
+            {showSystemPrompt && (
               <SystemPromptField
                 value={settings.systemPrompt}
                 onChange={(v) => onUpdate({ systemPrompt: v })}
@@ -150,10 +150,10 @@ export function SettingsPanel({
             <SamplingFields
               settings={settings}
               onUpdate={onUpdate}
-              hideThinking={mode === "playground"}
+              showThinking={showThinking}
             />
 
-            {mode === "playground" && (
+            {showCompletionSettings && (
               <>
                 <MaxTokensField
                   value={settings.maxTokens}
@@ -167,7 +167,7 @@ export function SettingsPanel({
             )}
           </section>
 
-          {mode === "playground" && onApplyTemplate && (
+          {onApplyTemplate && (
             <section className="space-y-3">
               <Text size="sm" bold>
                 Templates
@@ -194,11 +194,11 @@ export function SettingsPanel({
 function SamplingFields({
   settings,
   onUpdate,
-  hideThinking
+  showThinking
 }: {
   settings: RunSettings;
   onUpdate: (patch: Partial<RunSettings>) => void;
-  hideThinking?: boolean;
+  showThinking?: boolean;
 }) {
   const preset = settings.preset ?? DEFAULT_PRESET;
   const isManual = preset === "manual";
@@ -225,7 +225,7 @@ function SamplingFields({
         disabled={!isManual}
         onChange={(v) => onUpdate({ top_p: v })}
       />
-      {!hideThinking && (
+      {showThinking && (
         <SamplingThinkingField
           value={thinking}
           disabled={!isManual}
