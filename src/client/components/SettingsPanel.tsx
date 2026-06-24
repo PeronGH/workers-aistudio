@@ -99,23 +99,27 @@ export function SettingsPanel({
               onCheckedChange={toggleTheme}
               ariaLabel="Toggle dark mode"
             />
-            <ToggleRow
-              label="Debug mode"
-              checked={showDebug}
-              onCheckedChange={onToggleDebug}
-              ariaLabel="Toggle debug mode"
-            />
-            <section className="flex items-center justify-between">
-              <Label>Force push</Label>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={!canForcePush}
-                onClick={onForcePush}
-              >
-                Push now
-              </Button>
-            </section>
+            {mode === "chat" && (
+              <>
+                <ToggleRow
+                  label="Debug mode"
+                  checked={showDebug}
+                  onCheckedChange={onToggleDebug}
+                  ariaLabel="Toggle debug mode"
+                />
+                <section className="flex items-center justify-between">
+                  <Label>Force push</Label>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!canForcePush}
+                    onClick={onForcePush}
+                  >
+                    Push now
+                  </Button>
+                </section>
+              </>
+            )}
           </section>
 
           <section className="space-y-5">
