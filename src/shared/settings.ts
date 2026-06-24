@@ -36,7 +36,7 @@ export const RunSettingsSchema = z
       .int()
       .min(MAX_TOKENS_RANGE.min)
       .max(MAX_TOKENS_RANGE.max),
-    stop: z.array(z.string().min(1)).max(4)
+    stop: z.array(z.string().min(1))
   })
   .partial();
 

@@ -385,15 +385,11 @@ function StopSequencesField({
       <InputArea
         size="sm"
         aria-label="Stop sequences"
-        placeholder="One per line (max 4)"
+        placeholder="One per line"
         rows={3}
         value={value?.join("\n") ?? ""}
         onValueChange={(v) => {
-          const seqs = v
-            .split("\n")
-            .map((s) => s)
-            .filter(Boolean)
-            .slice(0, 4);
+          const seqs = v.split("\n").filter(Boolean);
           onChange(seqs.length > 0 ? seqs : undefined);
         }}
         className="w-full font-mono resize-y"
