@@ -30,6 +30,16 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
 Language: English
 Words: 5000
 Kudos: 18500
-Tags: `
+Tags:
+
+---
+
+Title:
+Summary:
+
+---
+Chapter 1
+
+`
   }
 ];
