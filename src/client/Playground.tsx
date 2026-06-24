@@ -15,8 +15,6 @@ import { Sidebar, type SidebarMode } from "./components/Sidebar";
 import { SidebarList } from "./components/SidebarList";
 import { SettingsPanel } from "./components/SettingsPanel";
 
-const TITLE_MAX = 40;
-
 interface PlaygroundProps {
   activeId: string | null;
   onNavigate: (id: string | null) => void;
@@ -75,8 +73,7 @@ export function Playground({
     if (activeId) {
       storeSave(activeId, text);
     } else {
-      const title = text.slice(0, TITLE_MAX).split("\n")[0];
-      const id = storeCreate(title, text);
+      const id = storeCreate(text);
       onNavigate(id);
     }
   }, [text, activeId, storeSave, storeCreate, onNavigate]);
