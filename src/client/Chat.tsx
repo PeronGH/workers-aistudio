@@ -368,8 +368,8 @@ export function Chat({
         onReset={resetSettings}
         showDebug={showDebug}
         onToggleDebug={setShowDebug}
-        canForcePush={effectiveActiveUuid !== null && !isShared}
-        onForcePush={forcePush}
+        canSave={effectiveActiveUuid !== null && !isShared}
+        onSave={forcePush}
         showSystemPrompt
         showThinking
       />

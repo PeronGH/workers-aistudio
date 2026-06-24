@@ -54,17 +54,6 @@ export function Playground({
     }
   }, [activeId, storeLoad, setText]);
 
-  // Auto-save on text change (debounced)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => {
-    if (!activeId || !text) return;
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      storeSave(activeId, text);
-    }, 500);
-    return () => clearTimeout(saveTimerRef.current);
-  }, [activeId, text, storeSave]);
-
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
       const pos = atCursor
@@ -76,35 +65,33 @@ export function Playground({
           textareaRef.current.selectionStart = insertPos;
           textareaRef.current.selectionEnd = insertPos;
         }
-        // Save after generation and create entry if new
-        const currentText =
-          insertPos !== undefined ? (textareaRef.current?.value ?? text) : text;
-        if (!activeId && currentText) {
-          const title = currentText.slice(0, TITLE_MAX).split("\n")[0];
-          const id = storeCreate(title, currentText);
-          onNavigate(id);
-        } else if (activeId) {
-          storeSave(activeId, currentText);
-        }
       });
     },
-    [text, settings, generate, activeId, storeCreate, storeSave, onNavigate]
+    [text, settings, generate]
   );
 
+  const handleSave = useCallback(() => {
+    if (!text) return;
+    if (activeId) {
+      storeSave(activeId, text);
+    } else {
+      const title = text.slice(0, TITLE_MAX).split("\n")[0];
+      const id = storeCreate(title, text);
+      onNavigate(id);
+    }
+  }, [text, activeId, storeSave, storeCreate, onNavigate]);
+
   const handleNew = useCallback(() => {
-    // Flush current text before navigating away
-    if (activeId && text) storeSave(activeId, text);
     onNavigate(null);
     setDrawerOpen(false);
-  }, [activeId, text, storeSave, onNavigate]);
+  }, [onNavigate]);
 
   const handleSelect = useCallback(
     (id: string) => {
-      if (activeId && text) storeSave(activeId, text);
       onNavigate(id);
       setDrawerOpen(false);
     },
-    [activeId, text, storeSave, onNavigate]
+    [onNavigate]
   );
 
   const handleDelete = useCallback(
@@ -116,11 +103,8 @@ export function Playground({
   );
 
   const handleApplyTemplate = useCallback(
-    (tmpl: string) => {
-      setText(tmpl);
-      if (activeId) storeSave(activeId, tmpl);
-    },
-    [activeId, storeSave, setText]
+    (tmpl: string) => setText(tmpl),
+    [setText]
   );
 
   return (
@@ -237,6 +221,8 @@ export function Playground({
         onCloseDrawer={() => setSettingsOpen(false)}
         onUpdate={updateSettings}
         onReset={resetSettings}
+        canSave={!!text}
+        onSave={handleSave}
         showCompletionSettings
         onApplyTemplate={handleApplyTemplate}
       />

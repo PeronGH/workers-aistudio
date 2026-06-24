@@ -39,8 +39,8 @@ interface SettingsPanelProps {
   onReset: () => void;
   showDebug?: boolean;
   onToggleDebug?: (v: boolean) => void;
-  canForcePush?: boolean;
-  onForcePush?: () => void;
+  canSave?: boolean;
+  onSave?: () => void;
   showSystemPrompt?: boolean;
   showThinking?: boolean;
   showCompletionSettings?: boolean;
@@ -57,8 +57,8 @@ export function SettingsPanel({
   onReset,
   showDebug,
   onToggleDebug,
-  canForcePush,
-  onForcePush,
+  canSave,
+  onSave,
   showSystemPrompt,
   showThinking,
   showCompletionSettings,
@@ -116,16 +116,16 @@ export function SettingsPanel({
                 ariaLabel="Toggle debug mode"
               />
             )}
-            {onForcePush && (
+            {onSave && (
               <section className="flex items-center justify-between">
-                <Label>Force push</Label>
+                <Label>Manual save</Label>
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={!canForcePush}
-                  onClick={onForcePush}
+                  disabled={!canSave}
+                  onClick={onSave}
                 >
-                  Push now
+                  Save
                 </Button>
               </section>
             )}
