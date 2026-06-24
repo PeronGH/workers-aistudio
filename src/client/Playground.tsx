@@ -14,6 +14,7 @@ import { usePlaygroundStore } from "./hooks/usePlaygroundStore";
 import { Sidebar, type SidebarMode } from "./components/Sidebar";
 import { SidebarList } from "./components/SidebarList";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { toastSuccess } from "./utils/toast";
 
 interface PlaygroundProps {
   activeId: string | null;
@@ -76,6 +77,7 @@ export function Playground({
       const id = storeCreate(text);
       onNavigate(id);
     }
+    toastSuccess("Saved.");
   }, [text, activeId, storeSave, storeCreate, onNavigate]);
 
   const handleNew = useCallback(() => {
