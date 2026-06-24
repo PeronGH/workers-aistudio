@@ -8,7 +8,7 @@ export interface PromptTemplate {
 export const PROMPT_TEMPLATES: PromptTemplate[] = [
   {
     id: "kimi-basic",
-    label: "Kimi — basic",
+    label: "Kimi - basic",
     models: ["kimi"],
     build: () =>
       "<|im_system|>system<|im_middle|>SYSTEM<|im_end|>" +
@@ -17,7 +17,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
   },
   {
     id: "glm-basic",
-    label: "GLM — basic",
+    label: "GLM - basic",
     models: ["glm"],
     build: () =>
       "[gMASK]<sop>" +
