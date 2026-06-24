@@ -1,22 +1,33 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, InputArea, Text } from "@cloudflare/kumo";
 import {
   CursorTextIcon,
   ListIcon,
   PlayIcon,
   SlidersIcon,
-  StopIcon
+  StopIcon,
+  TerminalWindowIcon
 } from "@phosphor-icons/react";
 import { useCompletion } from "./hooks/useCompletion";
 import { useRunSettings } from "./hooks/useRunSettings";
+import { usePlaygroundStore } from "./hooks/usePlaygroundStore";
 import { Sidebar, type SidebarMode } from "./components/Sidebar";
+import { SidebarList } from "./components/SidebarList";
 import { SettingsPanel } from "./components/SettingsPanel";
 
+const TITLE_MAX = 40;
+
 interface PlaygroundProps {
+  activeId: string | null;
+  onNavigate: (id: string | null) => void;
   onSelectMode: (mode: SidebarMode) => void;
 }
 
-export function Playground({ onSelectMode }: PlaygroundProps) {
+export function Playground({
+  activeId,
+  onNavigate,
+  onSelectMode
+}: PlaygroundProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -26,6 +37,27 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
     reset: resetSettings
   } = useRunSettings();
   const { text, setText, generate, stop, isStreaming } = useCompletion();
+  const store = usePlaygroundStore();
+
+  // Load text when activeId changes
+  useEffect(() => {
+    if (activeId) {
+      setText(store.load(activeId));
+    } else {
+      setText("");
+    }
+  }, [activeId, store, setText]);
+
+  // Auto-save on text change (debounced)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    if (!activeId || !text) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      store.save(activeId, text);
+    }, 500);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [activeId, text, store]);
 
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
@@ -38,9 +70,52 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
           textareaRef.current.selectionStart = insertPos;
           textareaRef.current.selectionEnd = insertPos;
         }
+        // Save after generation and create entry if new
+        const currentText =
+          insertPos !== undefined ? (textareaRef.current?.value ?? text) : text;
+        if (!activeId && currentText) {
+          const title = currentText.slice(0, TITLE_MAX).split("\n")[0];
+          const id = store.create(title, currentText);
+          onNavigate(id);
+        } else if (activeId) {
+          store.save(activeId, currentText);
+        }
       });
     },
-    [text, settings, generate]
+    [text, settings, generate, activeId, store, onNavigate]
+  );
+
+  const handleNew = useCallback(() => {
+    // Flush current text before navigating away
+    if (activeId && text) store.save(activeId, text);
+    onNavigate(null);
+    setDrawerOpen(false);
+  }, [activeId, text, store, onNavigate]);
+
+  const handleSelect = useCallback(
+    (id: string) => {
+      if (activeId && text) store.save(activeId, text);
+      onNavigate(id);
+      setDrawerOpen(false);
+    },
+    [activeId, text, store, onNavigate]
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      store.del(id);
+      if (activeId === id) onNavigate(null);
+    },
+    [activeId, store, onNavigate]
+  );
+
+  const handleApplyTemplate = useCallback(
+    (tmpl: string) => {
+      setText(tmpl);
+      // If we have an active entry, save immediately
+      if (activeId) store.save(activeId, tmpl);
+    },
+    [activeId, store, setText]
   );
 
   return (
@@ -51,11 +126,16 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
         onCloseDrawer={() => setDrawerOpen(false)}
         onSelectMode={onSelectMode}
       >
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Text size="xs" variant="secondary">
-            Raw text completion
-          </Text>
-        </div>
+        <SidebarList
+          entries={store.index}
+          activeId={activeId}
+          icon={TerminalWindowIcon}
+          emptyLabel="No saved prompts."
+          newLabel="New prompt"
+          onNew={handleNew}
+          onSelect={handleSelect}
+          onDelete={handleDelete}
+        />
       </Sidebar>
       <div className="flex flex-col flex-1 min-w-0">
         <header className="px-5 py-4 bg-kumo-base border-b border-kumo-line">
@@ -153,7 +233,7 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
         onUpdate={updateSettings}
         onReset={resetSettings}
         showCompletionSettings
-        onApplyTemplate={setText}
+        onApplyTemplate={handleApplyTemplate}
       />
     </div>
   );

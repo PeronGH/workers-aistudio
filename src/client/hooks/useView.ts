@@ -5,14 +5,16 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
 export type View =
   | { kind: "chat"; uuid: string | null }
   | { kind: "images" }
-  | { kind: "playground" };
+  | { kind: "playground"; id: string | null };
 
 function parsePath(pathname: string): View {
   if (pathname === "/images" || pathname === "/images/") {
     return { kind: "images" };
   }
-  if (pathname === "/playground" || pathname === "/playground/") {
-    return { kind: "playground" };
+  const pgMatch = pathname.match(/^\/playground(?:\/([^/]+))?\/?$/);
+  if (pgMatch) {
+    const id = pgMatch[1] && UUID_RE.test(pgMatch[1]) ? pgMatch[1] : null;
+    return { kind: "playground", id };
   }
   const match = pathname.match(/^\/conversation\/([^/]+)\/?$/);
   if (match && UUID_RE.test(match[1])) {
@@ -23,7 +25,8 @@ function parsePath(pathname: string): View {
 
 function pathFor(view: View): string {
   if (view.kind === "images") return "/images";
-  if (view.kind === "playground") return "/playground";
+  if (view.kind === "playground")
+    return view.id ? `/playground/${view.id}` : "/playground";
   return view.uuid ? `/conversation/${view.uuid}` : "/";
 }
 
