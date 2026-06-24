@@ -97,6 +97,7 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
               value={text}
               onValueChange={setText}
               placeholder="Type your prompt here..."
+              disabled={isStreaming}
               className="w-full h-full font-mono resize-none bg-kumo-base"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
