@@ -37,16 +37,22 @@ export function Playground({
     reset: resetSettings
   } = useRunSettings();
   const { text, setText, generate, stop, isStreaming } = useCompletion();
-  const store = usePlaygroundStore();
+  const {
+    index: storeIndex,
+    create: storeCreate,
+    save: storeSave,
+    load: storeLoad,
+    del: storeDel
+  } = usePlaygroundStore();
 
   // Load text when activeId changes
   useEffect(() => {
     if (activeId) {
-      setText(store.load(activeId));
+      setText(storeLoad(activeId));
     } else {
       setText("");
     }
-  }, [activeId, store, setText]);
+  }, [activeId, storeLoad, setText]);
 
   // Auto-save on text change (debounced)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -54,10 +60,10 @@ export function Playground({
     if (!activeId || !text) return;
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      store.save(activeId, text);
+      storeSave(activeId, text);
     }, 500);
     return () => clearTimeout(saveTimerRef.current);
-  }, [activeId, text, store]);
+  }, [activeId, text, storeSave]);
 
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
@@ -75,47 +81,46 @@ export function Playground({
           insertPos !== undefined ? (textareaRef.current?.value ?? text) : text;
         if (!activeId && currentText) {
           const title = currentText.slice(0, TITLE_MAX).split("\n")[0];
-          const id = store.create(title, currentText);
+          const id = storeCreate(title, currentText);
           onNavigate(id);
         } else if (activeId) {
-          store.save(activeId, currentText);
+          storeSave(activeId, currentText);
         }
       });
     },
-    [text, settings, generate, activeId, store, onNavigate]
+    [text, settings, generate, activeId, storeCreate, storeSave, onNavigate]
   );
 
   const handleNew = useCallback(() => {
     // Flush current text before navigating away
-    if (activeId && text) store.save(activeId, text);
+    if (activeId && text) storeSave(activeId, text);
     onNavigate(null);
     setDrawerOpen(false);
-  }, [activeId, text, store, onNavigate]);
+  }, [activeId, text, storeSave, onNavigate]);
 
   const handleSelect = useCallback(
     (id: string) => {
-      if (activeId && text) store.save(activeId, text);
+      if (activeId && text) storeSave(activeId, text);
       onNavigate(id);
       setDrawerOpen(false);
     },
-    [activeId, text, store, onNavigate]
+    [activeId, text, storeSave, onNavigate]
   );
 
   const handleDelete = useCallback(
     (id: string) => {
-      store.del(id);
+      storeDel(id);
       if (activeId === id) onNavigate(null);
     },
-    [activeId, store, onNavigate]
+    [activeId, storeDel, onNavigate]
   );
 
   const handleApplyTemplate = useCallback(
     (tmpl: string) => {
       setText(tmpl);
-      // If we have an active entry, save immediately
-      if (activeId) store.save(activeId, tmpl);
+      if (activeId) storeSave(activeId, tmpl);
     },
-    [activeId, store, setText]
+    [activeId, storeSave, setText]
   );
 
   return (
@@ -127,7 +132,7 @@ export function Playground({
         onSelectMode={onSelectMode}
       >
         <SidebarList
-          entries={store.index}
+          entries={storeIndex}
           activeId={activeId}
           icon={TerminalWindowIcon}
           emptyLabel="No saved prompts."
