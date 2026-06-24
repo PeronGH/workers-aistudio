@@ -5,7 +5,7 @@ import { api } from "../utils/api";
 import { toastError } from "../utils/toast";
 
 interface CompletionDelta {
-  response?: string;
+  choices?: { text?: string }[];
 }
 
 export function useCompletion() {
@@ -60,7 +60,7 @@ export function useCompletion() {
           } catch {
             continue;
           }
-          const piece = delta.response ?? "";
+          const piece = delta.choices?.[0]?.text ?? "";
           if (!piece) continue;
           generated += piece;
           const before = prompt + generated;
