@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface IndexEntry {
   uuid: string;
@@ -36,13 +36,18 @@ export function useLocalIndex(storageKey: string) {
     );
   }, []);
 
-  const rename = useCallback((uuid: string, title: string) => {
+  const update = useCallback((uuid: string, title: string) => {
     setIndex((prev) =>
-      prev.map((e) => (e.uuid === uuid ? { ...e, title } : e))
+      prev.map((e) =>
+        e.uuid === uuid ? { ...e, title, updatedAt: Date.now() } : e
+      )
     );
   }, []);
 
-  return { index, add, remove, touch, rename };
+  return useMemo(
+    () => ({ index, add, remove, touch, update }),
+    [index, add, remove, touch, update]
+  );
 }
 
 function load(key: string): IndexEntry[] {

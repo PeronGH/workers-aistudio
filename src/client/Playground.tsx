@@ -101,11 +101,6 @@ export function Playground({
     [activeId, storeDel, onNavigate]
   );
 
-  const handleApplyTemplate = useCallback(
-    (tmpl: string) => setText(tmpl),
-    [setText]
-  );
-
   return (
     <div className="flex h-dvh bg-kumo-elevated">
       <Sidebar
@@ -223,7 +218,7 @@ export function Playground({
         canSave={!!text}
         onSave={handleSave}
         showCompletionSettings
-        onApplyTemplate={handleApplyTemplate}
+        onApplyTemplate={setText}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useChat } from "./hooks/useChat";
-import { useConversations } from "./hooks/useConversations";
+import { useLocalIndex } from "./hooks/useLocalIndex";
 import { useRunSettings } from "./hooks/useRunSettings";
 import { useLocalSettings } from "./hooks/useLocalSettings";
 import { useAttachments } from "./hooks/useAttachments";
@@ -16,8 +16,9 @@ import { Header } from "./components/Header";
 import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { ChatCircleDotsIcon } from "@phosphor-icons/react";
 import { Sidebar, type SidebarMode } from "./components/Sidebar";
-import { ChatSidebarList } from "./components/ChatSidebarList";
+import { SidebarList } from "./components/SidebarList";
 import { SharedFooter } from "./components/SharedFooter";
 import { withToast } from "./utils/toast";
 
@@ -41,7 +42,7 @@ export function Chat({
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [anonymousSettings, setAnonymousSettings] = useState<RunSettings>({});
   const effectiveActiveUuid = anonymousMode ? null : activeUuid;
-  const conversations = useConversations();
+  const conversations = useLocalIndex("wai-studio:conversations");
   const {
     settings: savedSettings,
     update: updateSavedSettings,
@@ -298,10 +299,13 @@ export function Chat({
           }
         }}
       >
-        <ChatSidebarList
+        <SidebarList
           entries={conversations.index}
-          activeUuid={effectiveActiveUuid}
-          onNewChat={() => {
+          activeId={effectiveActiveUuid}
+          icon={ChatCircleDotsIcon}
+          emptyLabel="No conversations yet."
+          newLabel="New chat"
+          onNew={() => {
             handleNewChat();
             setDrawerOpen(false);
           }}
