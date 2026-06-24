@@ -2,14 +2,13 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
+  DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL,
   DEFAULT_PRESET,
   PRESET_VALUES,
   RunSettingsSchema,
   type RunSettings
 } from "../shared/settings";
-
-const MAX_COMPLETION_TOKENS = 98304;
 
 const CompletionRequestSchema = z.object({
   prompt: z.string().min(1),
@@ -45,11 +44,12 @@ function buildPayload(prompt: string, settings: RunSettings) {
   const out: Record<string, unknown> = {
     prompt,
     stream: true,
-    max_tokens: MAX_COMPLETION_TOKENS
+    max_tokens: settings.maxTokens ?? DEFAULT_MAX_TOKENS
   };
   if (resolved.temperature !== undefined)
     out.temperature = resolved.temperature;
   if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
+  if (settings.stop?.length) out.stop = settings.stop;
   return out;
 }
 

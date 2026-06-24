@@ -14,6 +14,9 @@ export const MODELS = [
 export type ModelId = (typeof MODELS)[number]["id"];
 export const DEFAULT_MODEL: ModelId = "@cf/moonshotai/kimi-k2.6";
 
+export const MAX_TOKENS_RANGE = { min: 1, max: 98304 } as const;
+export const DEFAULT_MAX_TOKENS = 2048;
+
 export const RunSettingsSchema = z
   .object({
     model: z.enum(MODELS.map((m) => m.id) as [ModelId, ...ModelId[]]),
@@ -27,7 +30,13 @@ export const RunSettingsSchema = z
     thinking: z.preprocess(
       (v) => (typeof v === "string" ? v !== "none" : v),
       z.boolean()
-    )
+    ),
+    maxTokens: z
+      .number()
+      .int()
+      .min(MAX_TOKENS_RANGE.min)
+      .max(MAX_TOKENS_RANGE.max),
+    stop: z.array(z.string().min(1)).max(4)
   })
   .partial();
 

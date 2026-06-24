@@ -1,11 +1,20 @@
-import { Button, InputArea, Select, Switch, Text } from "@cloudflare/kumo";
+import {
+  Button,
+  Input,
+  InputArea,
+  Select,
+  Switch,
+  Text
+} from "@cloudflare/kumo";
 import { Slider } from "@cloudflare/kumo/primitives/slider";
 import { Toggle } from "@cloudflare/kumo/primitives/toggle";
 import { ToggleGroup } from "@cloudflare/kumo/primitives/toggle-group";
 import { XIcon } from "@phosphor-icons/react";
 import {
+  DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL,
   DEFAULT_PRESET,
+  MAX_TOKENS_RANGE,
   MODELS,
   PRESETS,
   PRESET_VALUES,
@@ -136,6 +145,19 @@ export function SettingsPanel({
               onUpdate={onUpdate}
               hideThinking={mode === "playground"}
             />
+
+            {mode === "playground" && (
+              <>
+                <MaxTokensField
+                  value={settings.maxTokens}
+                  onChange={(v) => onUpdate({ maxTokens: v })}
+                />
+                <StopSequencesField
+                  value={settings.stop}
+                  onChange={(v) => onUpdate({ stop: v })}
+                />
+              </>
+            )}
           </section>
         </div>
       </aside>
@@ -317,6 +339,63 @@ function SystemPromptField({
         aria-label="System instructions"
         placeholder="Empty system prompt."
         rows={5}
+        className="w-full font-mono resize-y"
+      />
+    </section>
+  );
+}
+
+function MaxTokensField({
+  value,
+  onChange
+}: {
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <Label>Max tokens</Label>
+      <Input
+        type="number"
+        size="sm"
+        aria-label="Max tokens"
+        min={MAX_TOKENS_RANGE.min}
+        max={MAX_TOKENS_RANGE.max}
+        value={value ?? DEFAULT_MAX_TOKENS}
+        onValueChange={(v) => {
+          const n = Number(v);
+          onChange(Number.isFinite(n) && n > 0 ? n : undefined);
+        }}
+        className="w-full tabular-nums"
+      />
+    </section>
+  );
+}
+
+function StopSequencesField({
+  value,
+  onChange
+}: {
+  value: string[] | undefined;
+  onChange: (v: string[] | undefined) => void;
+}) {
+  return (
+    <section className="space-y-1.5">
+      <Label>Stop sequences</Label>
+      <InputArea
+        size="sm"
+        aria-label="Stop sequences"
+        placeholder="One per line (max 4)"
+        rows={3}
+        value={value?.join("\n") ?? ""}
+        onValueChange={(v) => {
+          const seqs = v
+            .split("\n")
+            .map((s) => s)
+            .filter(Boolean)
+            .slice(0, 4);
+          onChange(seqs.length > 0 ? seqs : undefined);
+        }}
         className="w-full font-mono resize-y"
       />
     </section>
