@@ -15,16 +15,17 @@ export function usePlaygroundStore() {
     }
   }, []);
 
+  // Content-addressed: identical text dedupes to the same immutable entry.
   const create = useCallback(
-    (text: string): string => {
-      const uuid = crypto.randomUUID();
-      add(uuid, deriveTitle(text));
+    async (text: string): Promise<string> => {
+      const id = await hashText(text);
       try {
-        localStorage.setItem(CONTENT_PREFIX + uuid, text);
+        localStorage.setItem(CONTENT_PREFIX + id, text);
       } catch {
         /* quota — ignore */
       }
-      return uuid;
+      add(id, deriveTitle(text));
+      return id;
     },
     [add]
   );
@@ -48,4 +49,12 @@ const TITLE_MAX = 40;
 
 function deriveTitle(text: string): string {
   return text.split("\n")[0].slice(0, TITLE_MAX) || "Untitled";
+}
+
+async function hashText(text: string): Promise<string> {
+  const data = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }

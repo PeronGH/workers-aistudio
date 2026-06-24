@@ -20,10 +20,11 @@ export function useLocalIndex(storageKey: string) {
 
   const add = useCallback((uuid: string, title: string) => {
     const now = Date.now();
-    setIndex((prev) => [
-      { uuid, title, createdAt: now, updatedAt: now },
-      ...prev
-    ]);
+    setIndex((prev) =>
+      prev.some((e) => e.uuid === uuid)
+        ? prev
+        : [{ uuid, title, createdAt: now, updatedAt: now }, ...prev]
+    );
   }, []);
 
   const remove = useCallback((uuid: string) => {
