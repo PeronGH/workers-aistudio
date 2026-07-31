@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Button, InputArea, Text } from "@cloudflare/kumo";
 import {
   CursorTextIcon,
@@ -20,6 +20,10 @@ interface PlaygroundProps {
   onSelectMode: (mode: SidebarMode) => void;
 }
 
+/** Slack for treating a scroll position as "at the bottom", in CSS pixels.
+ *  Fractional line heights mean scrollTop rarely reaches scrollHeight exactly. */
+const BOTTOM_SLACK = 16;
+
 export function Playground({ onSelectMode }: PlaygroundProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -36,6 +40,23 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
     load: storeLoad,
     del: storeDel
   } = usePlaygroundStore();
+
+  const atBottomRef = useRef(true);
+
+  const handleScroll = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    atBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight <= BOTTOM_SLACK;
+  }, []);
+
+  // Follow the output while the user is parked at the bottom. Scrolling up to
+  // read unpins them, so their position survives the rest of the generation.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!isStreaming || !atBottomRef.current || !el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [text, isStreaming]);
 
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
@@ -136,6 +157,7 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
               onValueChange={setText}
               placeholder="Type your prompt here..."
               readOnly={isStreaming}
+              onScroll={handleScroll}
               className="w-full h-full font-mono resize-none bg-kumo-base"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
