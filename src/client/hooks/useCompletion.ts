@@ -13,11 +13,14 @@ export function useCompletion() {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const streamingRef = useRef(false);
+  const beforeFinishRef = useRef<(() => void) | null>(null);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     streamingRef.current = false;
+    beforeFinishRef.current?.();
+    beforeFinishRef.current = null;
     setIsStreaming(false);
   }, []);
 
@@ -25,7 +28,8 @@ export function useCompletion() {
     async (
       currentText: string,
       cursorPos: number | null,
-      settings: RunSettings
+      settings: RunSettings,
+      onBeforeFinish?: () => void
     ) => {
       if (streamingRef.current) return;
 
@@ -39,6 +43,7 @@ export function useCompletion() {
       const controller = new AbortController();
       abortRef.current = controller;
       streamingRef.current = true;
+      beforeFinishRef.current = onBeforeFinish ?? null;
       setIsStreaming(true);
 
       let generated = "";
@@ -67,6 +72,8 @@ export function useCompletion() {
       } finally {
         abortRef.current = null;
         streamingRef.current = false;
+        beforeFinishRef.current?.();
+        beforeFinishRef.current = null;
         setIsStreaming(false);
       }
 

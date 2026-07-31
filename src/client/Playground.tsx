@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Button, InputArea, Text } from "@cloudflare/kumo";
 import {
   CursorTextIcon,
@@ -24,6 +24,7 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const finishedScrollTopRef = useRef<number | null>(null);
   const {
     settings,
     update: updateSettings,
@@ -37,20 +38,34 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
     del: storeDel
   } = usePlaygroundStore();
 
+  const captureFinishedScrollTop = useCallback(() => {
+    finishedScrollTopRef.current = textareaRef.current?.scrollTop ?? null;
+  }, []);
+
+  useLayoutEffect(() => {
+    const scrollTop = finishedScrollTopRef.current;
+    const textarea = textareaRef.current;
+    if (isStreaming || scrollTop === null || !textarea) return;
+
+    textarea.scrollTop = scrollTop;
+    const frame = requestAnimationFrame(() => {
+      if (textareaRef.current === textarea) {
+        textarea.scrollTop = scrollTop;
+      }
+      finishedScrollTopRef.current = null;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isStreaming]);
+
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
       const pos = atCursor
         ? (textareaRef.current?.selectionStart ?? null)
         : null;
-      void generate(text, pos, settings).then((insertPos) => {
-        if (insertPos !== undefined && textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.selectionStart = insertPos;
-          textareaRef.current.selectionEnd = insertPos;
-        }
-      });
+      void generate(text, pos, settings, captureFinishedScrollTop);
     },
-    [text, settings, generate]
+    [text, settings, generate, captureFinishedScrollTop]
   );
 
   const handleSave = useCallback(() => {
