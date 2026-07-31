@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button, InputArea, Text } from "@cloudflare/kumo";
 import {
   CursorTextIcon,
@@ -24,7 +24,6 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const finishedScrollTopRef = useRef<number | null>(null);
   const {
     settings,
     update: updateSettings,
@@ -38,34 +37,14 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
     del: storeDel
   } = usePlaygroundStore();
 
-  const captureFinishedScrollTop = useCallback(() => {
-    finishedScrollTopRef.current = textareaRef.current?.scrollTop ?? null;
-  }, []);
-
-  useLayoutEffect(() => {
-    const scrollTop = finishedScrollTopRef.current;
-    const textarea = textareaRef.current;
-    if (isStreaming || scrollTop === null || !textarea) return;
-
-    textarea.scrollTop = scrollTop;
-    const frame = requestAnimationFrame(() => {
-      if (textareaRef.current === textarea) {
-        textarea.scrollTop = scrollTop;
-      }
-      finishedScrollTopRef.current = null;
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [isStreaming]);
-
   const handleGenerate = useCallback(
     (atCursor: boolean) => {
       const pos = atCursor
         ? (textareaRef.current?.selectionStart ?? null)
         : null;
-      void generate(text, pos, settings, captureFinishedScrollTop);
+      void generate(text, pos, settings);
     },
-    [text, settings, generate, captureFinishedScrollTop]
+    [text, settings, generate]
   );
 
   const handleSave = useCallback(() => {
@@ -147,12 +126,16 @@ export function Playground({ onSelectMode }: PlaygroundProps) {
         </header>
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 p-4">
+            {/* readOnly rather than disabled while streaming: the browser
+                blurs a disabled element and drops it from the tab order,
+                which loses the caret, the keyboard shortcut and the user's
+                scroll position the moment generation ends. */}
             <InputArea
               ref={textareaRef}
               value={text}
               onValueChange={setText}
               placeholder="Type your prompt here..."
-              disabled={isStreaming}
+              readOnly={isStreaming}
               className="w-full h-full font-mono resize-none bg-kumo-base"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
