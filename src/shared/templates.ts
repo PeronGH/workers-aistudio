@@ -27,6 +27,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     label: "DeepSeek - basic",
     build: () =>
       `<｜begin▁of▁sentence｜>Reasoning Effort: Max
+
 SYSTEM<｜User｜>USER<｜Assistant｜>
 <think>THINKING</think>`
   },
