@@ -4,8 +4,7 @@ import { z } from "zod";
 import {
   DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL,
-  DEFAULT_PRESET,
-  PRESET_VALUES,
+  resolveSampling,
   RunSettingsSchema,
   type RunSettings
 } from "../shared/settings";
@@ -40,24 +39,14 @@ export const completionRoutes = new Hono<{ Bindings: Env }>().post(
 );
 
 function buildPayload(prompt: string, settings: RunSettings) {
-  const resolved = resolveSampling(settings);
+  const { temperature, top_p } = resolveSampling(settings);
   const out: Record<string, unknown> = {
     prompt,
     stream: true,
-    max_tokens: settings.maxTokens ?? DEFAULT_MAX_TOKENS
+    max_tokens: settings.maxTokens ?? DEFAULT_MAX_TOKENS,
+    temperature,
+    top_p
   };
-  if (resolved.temperature !== undefined)
-    out.temperature = resolved.temperature;
-  if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
   if (settings.stop?.length) out.stop = settings.stop;
   return out;
-}
-
-function resolveSampling(settings: RunSettings) {
-  const preset = settings.preset ?? DEFAULT_PRESET;
-  if (preset === "manual") {
-    return { temperature: settings.temperature, top_p: settings.top_p };
-  }
-  const p = PRESET_VALUES[preset];
-  return { temperature: p.temperature, top_p: p.top_p };
 }

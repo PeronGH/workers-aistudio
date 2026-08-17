@@ -4,8 +4,7 @@ import { z } from "zod";
 import { ChatMessageSchema, type ChatMessage } from "../shared/messages";
 import {
   DEFAULT_MODEL,
-  DEFAULT_PRESET,
-  PRESET_VALUES,
+  resolveSampling,
   RunSettingsSchema,
   type RunSettings
 } from "../shared/settings";
@@ -78,42 +77,26 @@ async function resolveImageContent(
 }
 
 function buildPayload(messages: ChatMessage[], settings: RunSettings) {
-  const resolved = resolveSampling(settings);
-  const out: Record<string, unknown> = {
-    messages: withSystemPrompt(messages, settings.systemPrompt),
-    stream: true,
-    max_completion_tokens: MAX_COMPLETION_TOKENS
-  };
-
-  if (resolved.temperature !== undefined)
-    out.temperature = resolved.temperature;
-  if (resolved.top_p !== undefined) out.top_p = resolved.top_p;
+  const { temperature, top_p, thinking, reasoningEffort } =
+    resolveSampling(settings);
 
   // Different model chat templates read different thinking flags, so set every
-  // knob together (see workers-ai-proxy). preserve/clear are inverse.
-  const thinking = resolved.thinking !== false;
-  out.chat_template_kwargs = {
-    thinking,
-    enable_thinking: thinking,
-    preserve_thinking: true,
-    drop_thinking: false,
-    clear_thinking: false
+  // knob together (see workers-ai-proxy). preserve/drop/clear are inverse.
+  return {
+    messages: withSystemPrompt(messages, settings.systemPrompt),
+    stream: true,
+    max_completion_tokens: MAX_COMPLETION_TOKENS,
+    temperature,
+    top_p,
+    chat_template_kwargs: {
+      thinking,
+      enable_thinking: thinking,
+      preserve_thinking: true,
+      drop_thinking: false,
+      clear_thinking: false,
+      ...(thinking && { reasoning_effort: reasoningEffort })
+    }
   };
-
-  return out;
-}
-
-function resolveSampling(settings: RunSettings) {
-  const preset = settings.preset ?? DEFAULT_PRESET;
-  if (preset === "manual") {
-    return {
-      temperature: settings.temperature,
-      top_p: settings.top_p,
-      thinking: settings.thinking
-    };
-  }
-  const p = PRESET_VALUES[preset];
-  return { temperature: p.temperature, top_p: p.top_p, thinking: p.thinking };
 }
 
 function withSystemPrompt(

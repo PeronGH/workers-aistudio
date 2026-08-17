@@ -2,8 +2,14 @@ import { z } from "zod";
 
 export const TEMPERATURE_RANGE = { min: 0, max: 2, step: 0.05 } as const;
 export const TOP_P_RANGE = { min: 0, max: 1, step: 0.01 } as const;
-export const PRESETS = ["thinking", "instant", "manual"] as const;
-export const DEFAULT_PRESET: Preset = "thinking";
+
+export const REASONING_EFFORTS = ["low", "high", "max"] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
+export const DEFAULT_TEMPERATURE = 1.0;
+export const DEFAULT_TOP_P = 0.95;
+export const DEFAULT_THINKING = true;
+export const DEFAULT_REASONING_EFFORT: ReasoningEffort = "high";
 
 export const MODELS = [
   { id: "@cf/moonshotai/kimi-k2.6", label: "Kimi K2.6" },
@@ -22,7 +28,6 @@ export const DEFAULT_MAX_TOKENS = 2048;
 export const RunSettingsSchema = z
   .object({
     model: z.enum(MODELS.map((m) => m.id) as [ModelId, ...ModelId[]]),
-    preset: z.enum(PRESETS),
     systemPrompt: z.string(),
     temperature: z
       .number()
@@ -33,6 +38,7 @@ export const RunSettingsSchema = z
       (v) => (typeof v === "string" ? v !== "none" : v),
       z.boolean()
     ),
+    reasoningEffort: z.enum(REASONING_EFFORTS),
     maxTokens: z
       .number()
       .int()
@@ -43,7 +49,47 @@ export const RunSettingsSchema = z
   .partial();
 
 export type RunSettings = z.infer<typeof RunSettingsSchema>;
-export type Preset = (typeof PRESETS)[number];
+
+/**
+ * One-shot shortcuts: applying one writes its values into the settings and is
+ * then forgotten. There is no mode to be in — every knob stays user-editable.
+ */
+export const SAMPLING_SHORTCUTS = [
+  {
+    label: "Thinking",
+    values: {
+      temperature: 1.0,
+      top_p: 0.95,
+      thinking: true,
+      reasoningEffort: "high"
+    }
+  },
+  {
+    label: "Instant",
+    values: {
+      temperature: 0.6,
+      top_p: 0.95,
+      thinking: false,
+      reasoningEffort: "low"
+    }
+  }
+] as const satisfies readonly { label: string; values: Sampling }[];
+
+export interface Sampling {
+  temperature: number;
+  top_p: number;
+  thinking: boolean;
+  reasoningEffort: ReasoningEffort;
+}
+
+export function resolveSampling(settings: RunSettings): Sampling {
+  return {
+    temperature: settings.temperature ?? DEFAULT_TEMPERATURE,
+    top_p: settings.top_p ?? DEFAULT_TOP_P,
+    thinking: settings.thinking ?? DEFAULT_THINKING,
+    reasoningEffort: settings.reasoningEffort ?? DEFAULT_REASONING_EFFORT
+  };
+}
 
 export const TRANSCRIPTION_LANGUAGES = [
   { code: "en", name: "English" },
@@ -61,11 +107,3 @@ export const LocalSettingsSchema = z
   .partial();
 
 export type LocalSettings = z.infer<typeof LocalSettingsSchema>;
-
-export const PRESET_VALUES: Record<
-  Exclude<Preset, "manual">,
-  { temperature: number; top_p: number; thinking?: boolean }
-> = {
-  thinking: { temperature: 1.0, top_p: 0.95 },
-  instant: { temperature: 0.6, top_p: 0.95, thinking: false }
-};

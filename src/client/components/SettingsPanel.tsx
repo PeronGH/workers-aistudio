@@ -13,17 +13,17 @@ import { XIcon } from "@phosphor-icons/react";
 import {
   DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL,
-  DEFAULT_PRESET,
   MAX_TOKENS_RANGE,
   MODELS,
-  PRESETS,
-  PRESET_VALUES,
+  REASONING_EFFORTS,
+  resolveSampling,
+  SAMPLING_SHORTCUTS,
   TEMPERATURE_RANGE,
   TOP_P_RANGE,
   TRANSCRIPTION_LANGUAGES,
   type LocalSettings,
   type ModelId,
-  type Preset,
+  type ReasoningEffort,
   type RunSettings
 } from "../../shared/settings";
 import { PROMPT_TEMPLATES } from "../../shared/templates";
@@ -206,37 +206,35 @@ function SamplingFields({
   onUpdate: (patch: Partial<RunSettings>) => void;
   showThinking?: boolean;
 }) {
-  const preset = settings.preset ?? DEFAULT_PRESET;
-  const isManual = preset === "manual";
-  const presetValues = isManual ? null : PRESET_VALUES[preset];
-  const temperature = presetValues
-    ? presetValues.temperature
-    : (settings.temperature ?? 1.0);
-  const topP = presetValues ? presetValues.top_p : (settings.top_p ?? 0.95);
-  const thinking = presetValues ? presetValues.thinking : settings.thinking;
+  const { temperature, top_p, thinking, reasoningEffort } =
+    resolveSampling(settings);
   return (
     <>
-      <PresetField value={preset} onChange={(v) => onUpdate({ preset: v })} />
+      <ShortcutsField onApply={onUpdate} />
       <SamplingSlider
         label="Temperature"
         value={temperature}
         range={TEMPERATURE_RANGE}
-        disabled={!isManual}
         onChange={(v) => onUpdate({ temperature: v })}
       />
       <SamplingSlider
         label="Top P"
-        value={topP}
+        value={top_p}
         range={TOP_P_RANGE}
-        disabled={!isManual}
         onChange={(v) => onUpdate({ top_p: v })}
       />
       {showThinking && (
-        <SamplingThinkingField
-          value={thinking}
-          disabled={!isManual}
-          onChange={(v) => onUpdate({ thinking: v })}
-        />
+        <>
+          <ThinkingField
+            value={thinking}
+            onChange={(v) => onUpdate({ thinking: v })}
+          />
+          <ReasoningEffortField
+            value={reasoningEffort}
+            disabled={!thinking}
+            onChange={(v) => onUpdate({ reasoningEffort: v })}
+          />
+        </>
       )}
     </>
   );
@@ -246,13 +244,11 @@ function SamplingSlider({
   label,
   value,
   range,
-  disabled,
   onChange
 }: {
   label: string;
   value: number;
   range: { min: number; max: number; step: number };
-  disabled: boolean;
   onChange: (v: number) => void;
 }) {
   return (
@@ -261,10 +257,9 @@ function SamplingSlider({
       min={range.min}
       max={range.max}
       step={range.step}
-      disabled={disabled}
       format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
       onValueChange={onChange}
-      className={`space-y-1.5 ${disabled ? "opacity-40" : ""}`}
+      className="space-y-1.5"
     >
       <div className="flex items-center justify-between">
         <Slider.Label className="text-xs font-semibold text-kumo-subtle">
@@ -287,22 +282,18 @@ function SamplingSlider({
   );
 }
 
-function SamplingThinkingField({
+function ThinkingField({
   value,
-  disabled,
   onChange
 }: {
-  value: boolean | undefined;
-  disabled: boolean;
+  value: boolean;
   onChange: (v: boolean) => void;
 }) {
-  const on = value !== false;
   return (
     <section className="flex items-center justify-between">
       <Label>Thinking</Label>
       <Switch
-        checked={on}
-        disabled={disabled}
+        checked={value}
         onCheckedChange={onChange}
         size="sm"
         aria-label="Enable thinking"
@@ -311,17 +302,49 @@ function SamplingThinkingField({
   );
 }
 
-function PresetField({
+function ReasoningEffortField({
   value,
+  disabled,
   onChange
 }: {
-  value: Preset;
-  onChange: (v: Preset) => void;
+  value: ReasoningEffort;
+  disabled: boolean;
+  onChange: (v: ReasoningEffort) => void;
+}) {
+  return (
+    <section className={`space-y-1.5 ${disabled ? "opacity-40" : ""}`}>
+      <Label>Reasoning effort</Label>
+      <Segmented
+        options={REASONING_EFFORTS}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    </section>
+  );
+}
+
+function ShortcutsField({
+  onApply
+}: {
+  onApply: (patch: Partial<RunSettings>) => void;
 }) {
   return (
     <section className="space-y-1.5">
-      <Label>Preset</Label>
-      <Segmented options={PRESETS} value={value} onChange={onChange} />
+      <Label>Shortcuts</Label>
+      <div className="flex gap-2">
+        {SAMPLING_SHORTCUTS.map((s) => (
+          <Button
+            key={s.label}
+            variant="secondary"
+            size="sm"
+            onClick={() => onApply(s.values)}
+            className="flex-1"
+          >
+            {s.label}
+          </Button>
+        ))}
+      </div>
     </section>
   );
 }
