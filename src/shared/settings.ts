@@ -8,7 +8,9 @@ export const DEFAULT_PRESET: Preset = "thinking";
 export const MODELS = [
   { id: "@cf/moonshotai/kimi-k2.6", label: "Kimi K2.6" },
   { id: "@cf/moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
-  { id: "@cf/zai-org/glm-5.2", label: "GLM-5.2" }
+  { id: "@cf/zai-org/glm-5.2", label: "GLM-5.2" },
+  { id: "@cf/deepseek-ai/deepseek-v4-pro-0813", label: "DeepSeek V4 Pro" },
+  { id: "@cf/deepseek-ai/deepseek-v4-flash-0731", label: "DeepSeek V4 Flash" }
 ] as const;
 
 export type ModelId = (typeof MODELS)[number]["id"];
