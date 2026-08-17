@@ -23,6 +23,14 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       "<|user|>USER<|assistant|>\n<think>THINKING</think>"
   },
   {
+    id: "deepseek-basic",
+    label: "DeepSeek - basic",
+    build: () =>
+      `<｜begin▁of▁sentence｜>Reasoning Effort: Max
+SYSTEM<｜User｜>USER<｜Assistant｜>
+<think>THINKING</think>`
+  },
+  {
     id: "creative-writing",
     label: "Creative writing",
     build: () =>
