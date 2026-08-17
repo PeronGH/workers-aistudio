@@ -9,7 +9,7 @@ export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 export const DEFAULT_TEMPERATURE = 1.0;
 export const DEFAULT_TOP_P = 0.95;
 export const DEFAULT_THINKING = true;
-export const DEFAULT_REASONING_EFFORT: ReasoningEffort = "high";
+export const DEFAULT_REASONING_EFFORT: ReasoningEffort = "max";
 
 export const MODELS = [
   { id: "@cf/moonshotai/kimi-k2.6", label: "Kimi K2.6" },
@@ -61,7 +61,7 @@ export const SAMPLING_SHORTCUTS = [
       temperature: 1.0,
       top_p: 0.95,
       thinking: true,
-      reasoningEffort: "high"
+      reasoningEffort: "max"
     }
   },
   {
