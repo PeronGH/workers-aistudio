@@ -96,6 +96,7 @@ function buildPayload(messages: ChatMessage[], settings: RunSettings) {
     thinking,
     enable_thinking: thinking,
     preserve_thinking: true,
+    drop_thinking: false,
     clear_thinking: false
   };
 
