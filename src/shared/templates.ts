@@ -29,6 +29,11 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       `<｜begin▁of▁sentence｜>SYSTEM<｜User｜>USER<｜Assistant｜><think>THINKING</think>`
   },
   {
+    id: "deepseek-fim",
+    label: "DeepSeek - FIM",
+    build: () => `<｜fim▁begin｜>PREFIX<｜fim▁hole｜>SUFFIX<｜fim▁end｜>`
+  },
+  {
     id: "creative-writing",
     label: "Creative writing",
     build: () =>
