@@ -20,7 +20,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       "[gMASK]<sop>" +
       "<|system|>Reasoning Effort: Max" +
       "<|system|>SYSTEM" +
-      "<|user|>USER<|assistant|>\n<think>THINKING</think>"
+      "<|user|>USER<|assistant|><think>THINKING</think>"
   },
   {
     id: "deepseek-basic",
