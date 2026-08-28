@@ -11,7 +11,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     build: () =>
       "<|im_system|>system<|im_middle|>SYSTEM<|im_end|>" +
       "<|im_user|>user<|im_middle|>USER<|im_end|>" +
-      "<|im_assistant|>assistant<|im_middle|><think>THINKING</think>"
+      "<|im_assistant|>assistant<|im_middle|><think>THINKING</think>ANSWER"
   },
   {
     id: "glm-basic",
@@ -20,7 +20,7 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       "[gMASK]<sop>" +
       "<|system|>Reasoning Effort: Max" +
       "<|system|>SYSTEM" +
-      "<|user|>USER<|assistant|><think>THINKING</think>"
+      "<|user|>USER<|assistant|><think>THINKING</think>ANSWER"
   },
   {
     id: "qwen-basic",
@@ -28,17 +28,17 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     build: () =>
       "<|im_start|>system\nSYSTEM<|im_end|>\n" +
       "<|im_start|>user\nUSER<|im_end|>\n" +
-      "<|im_start|>assistant\n<think>\nTHINKING\n</think>\n\n"
+      "<|im_start|>assistant\n<think>\nTHINKING\n</think>\n\nANSWER"
   },
   {
     id: "deepseek-basic",
     label: "DeepSeek - basic",
     build: () =>
-      `<｜begin▁of▁sentence｜>SYSTEM<｜User｜>USER<｜Assistant｜><think>THINKING</think>`
+      `<｜begin▁of▁sentence｜>SYSTEM<｜User｜>USER<｜Assistant｜><think>THINKING</think>ANSWER`
   },
   {
     id: "deepseek-fim",
     label: "DeepSeek - FIM",
-    build: () => `<｜fim▁begin｜>PREFIX<｜fim▁hole｜>SUFFIX<｜fim▁end｜>`
+    build: () => `<｜fim▁begin｜>PREFIX<｜fim▁hole｜>SUFFIX<｜fim▁end｜>ANSWER`
   }
 ];
