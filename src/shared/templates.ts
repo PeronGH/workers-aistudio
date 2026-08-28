@@ -40,25 +40,5 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
     id: "deepseek-fim",
     label: "DeepSeek - FIM",
     build: () => `<｜fim▁begin｜>PREFIX<｜fim▁hole｜>SUFFIX<｜fim▁end｜>`
-  },
-  {
-    id: "creative-writing",
-    label: "Creative writing",
-    build: () =>
-      `Rating:
-Language: English
-Words: 5000
-Kudos: 18500
-Tags:
-
----
-
-Title:
-Summary:
-
----
-Chapter 1
-
-`
   }
 ];
