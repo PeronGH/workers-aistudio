@@ -23,6 +23,14 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
       "<|user|>USER<|assistant|><think>THINKING</think>"
   },
   {
+    id: "qwen-basic",
+    label: "Qwen - basic",
+    build: () =>
+      "<|im_start|>system\nSYSTEM<|im_end|>\n" +
+      "<|im_start|>user\nUSER<|im_end|>\n" +
+      "<|im_start|>assistant\n<think>\nTHINKING\n</think>\n\n"
+  },
+  {
     id: "deepseek-basic",
     label: "DeepSeek - basic",
     build: () =>
