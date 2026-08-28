@@ -3,7 +3,13 @@ import { z } from "zod";
 export const TEMPERATURE_RANGE = { min: 0, max: 2, step: 0.05 } as const;
 export const TOP_P_RANGE = { min: 0, max: 1, step: 0.01 } as const;
 
-export const REASONING_EFFORTS = ["low", "high", "max"] as const;
+export const REASONING_EFFORTS = [
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max"
+] as const;
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
 export const DEFAULT_TEMPERATURE = 1.0;
